@@ -176,6 +176,87 @@
     .td-date{ white-space:nowrap; font-family: var(--mono); font-size:12px; }
     .tasks{ white-space:pre-wrap; color:rgba(232,238,255,.9); }
 
+    /* ======= TODAY MARKER ======= */
+    .today-row td{
+      background: rgba(122,167,255,.12);
+      border-bottom-color: rgba(122,167,255,.25);
+    }
+    .today-row:hover td{
+      background: rgba(122,167,255,.16);
+    }
+    .today-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.20);
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.4px;
+      text-transform:uppercase;
+      margin-left:10px;
+    }
+    .live-dot{
+      width:8px; height:8px; border-radius:50%;
+      background: #ff2d2d;
+      box-shadow: 0 0 0 4px rgba(255,45,45,.15);
+      animation: pulse 1s infinite ease-in-out;
+    }
+    .blink-text{
+      animation: blink 1s infinite steps(1, end);
+    }
+    @keyframes blink{
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: .25; }
+    }
+    @keyframes pulse{
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: .7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .today-sep td{
+      padding:0 !important;
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .today-sep .sep-inner{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:10px;
+      background: linear-gradient(to right, rgba(255,45,45,.10), rgba(122,167,255,.10), rgba(93,240,166,.10));
+      border-top:1px solid rgba(255,255,255,.10);
+      border-bottom:1px solid rgba(255,255,255,.10);
+      font-weight:900;
+      letter-spacing:.6px;
+      text-transform:uppercase;
+    }
+
+    /* ======= LIBUR (red background) ======= */
+    .libur-row td{
+      background: rgba(255, 60, 60, .22);
+      border-bottom-color: rgba(255, 90, 90, .35);
+    }
+    .libur-row:hover td{
+      background: rgba(255, 60, 60, .28);
+    }
+    .libur-tag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:4px 10px;
+      border-radius:999px;
+      background: rgba(255, 60, 60, .25);
+      border:1px solid rgba(255, 120, 120, .40);
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.4px;
+      text-transform:uppercase;
+      margin-left:10px;
+    }
+
     .status{
       display:flex;
       align-items:center;
@@ -330,7 +411,7 @@
       <table>
         <thead>
           <tr>
-            <th style="width:140px;">Tanggal</th>
+            <th style="width:160px;">Tanggal</th>
             <th>Tugas Tim Lapangan</th>
             <th>Tugas Tim Operator</th>
             <th style="width:110px;">Total Task</th>
@@ -345,7 +426,7 @@
         <span class="dot" id="statusDot"></span>
         <span id="statusText">Menyiapkan…</span>
         <span class="pill" id="debugGid" title="gid sheet yang dipakai">gid: -</span>
-        <span class="pill" id="debugSource" title="endpoint data yang dipakai">source: -</span>
+        <span class="pill" id="debugSource" title="endpoint data yang dipakai">source: csv</span>
       </div>
     </div>
   </div>
@@ -378,10 +459,13 @@ const PUBLISHED_HTML_URL =
 const TARGET_SHEET_NAME = "Kegiatan";
 const KEUANGAN_PASSWORD = "AdvertisingJaya";
 
+// deteksi libur jika cell berisi salah satu keyword ini (case-insensitive)
+const LIBUR_KEYWORDS = ["libur", "off", "holiday", "cuti"];
+
 /***********************
  * STATE
  ***********************/
-let RAW_ROWS = []; // {date, lapangan, operator, total, tanggalRaw}
+let RAW_ROWS = []; // {date, lapangan, operator, total, tanggalRaw, isLibur, isToday}
 let chartTrend, chartTop, modalChart;
 
 /***********************
@@ -420,12 +504,10 @@ function countTasks(text){
  ***********************/
 function toDateFlexible(v){
   if(!v) return null;
-  // coba parse default JS (bisa baca 1/27/2026 dll)
   const d = new Date(v);
   if(!isNaN(d.getTime())){
     return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   }
-  // coba dd/mm/yyyy
   const m = String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if(m){
     const dd = Number(m[1]), mm = Number(m[2]), yy = Number(m[3]);
@@ -458,9 +540,19 @@ function isoWeekKey(d){
 }
 function monthKey(d){ return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`; }
 function yearKey(d){ return String(d.getUTCFullYear()); }
+function todayUTC(){
+  const now = new Date();
+  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+}
+function isSameDayUTC(a, b){
+  return a && b &&
+    a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() === b.getUTCMonth() &&
+    a.getUTCDate() === b.getUTCDate();
+}
 
 /***********************
- * CSV PARSER (robust enough for Google Sheets)
+ * CSV PARSER
  ***********************/
 function parseCSV(text){
   const rows = [];
@@ -473,7 +565,6 @@ function parseCSV(text){
 
     if(inQuotes){
       if(ch === '"'){
-        // escaped quote
         if(text[i+1] === '"'){
           cur += '"';
           i++;
@@ -501,28 +592,23 @@ function parseCSV(text){
       }
     }
   }
-  // last cell
   row.push(cur);
   rows.push(row);
-
-  // trim trailing empty lines
   while(rows.length && rows[rows.length-1].every(c => String(c||"").trim() === "")) rows.pop();
   return rows;
 }
 
 /***********************
- * GET gid from pubhtml (best effort)
+ * LOAD: gid from pubhtml then CSV
  ***********************/
 async function fetchText(url){
   const res = await fetch(url, { cache:"no-store" });
   return await res.text();
 }
-
 function getGidMapFromPubhtml(html){
-  // cari semua link yg mengandung gid=...
   const doc = new DOMParser().parseFromString(html, "text/html");
   const links = [...doc.querySelectorAll('a[href*="gid="]')];
-  const map = new Map(); // nameLower -> gid
+  const map = new Map();
   for(const a of links){
     const name = (a.textContent || "").trim();
     const href = a.getAttribute("href") || "";
@@ -532,14 +618,7 @@ function getGidMapFromPubhtml(html){
   }
   return map;
 }
-
-/***********************
- * LOAD DATA via CSV endpoint (works much more reliably than parsing table.waffle)
- * Endpoint pattern for "published" spreadsheets:
- *   .../pub?gid=XXXX&single=true&output=csv
- ***********************/
 function pubCsvUrl(pubhtml, gid){
-  // swap /pubhtml -> /pub
   const base = pubhtml.replace(/\/pubhtml(\?.*)?$/i, "/pub");
   const p = new URLSearchParams();
   p.set("gid", gid);
@@ -547,10 +626,7 @@ function pubCsvUrl(pubhtml, gid){
   p.set("output", "csv");
   return `${base}?${p.toString()}`;
 }
-
 function extractRowsFromGrid(grid){
-  // grid: array of array cells
-  // cari header row: Tanggal / Tugas Tim Lapangan / Tugas Tim Operator
   let headerRow = -1;
   for(let i=0;i<grid.length;i++){
     const row = grid[i].map(x=>String(x||"").toLowerCase().trim());
@@ -562,7 +638,6 @@ function extractRowsFromGrid(grid){
       break;
     }
   }
-  // fallback ke baris 0 kalau tidak ketemu
   if(headerRow === -1) headerRow = 0;
 
   const header = grid[headerRow].map(x=>String(x||"").toLowerCase().trim());
@@ -574,38 +649,63 @@ function extractRowsFromGrid(grid){
   if(idxOp < 0) idxOp = 2;
 
   const out = [];
+  const tday = todayUTC();
+
   for(let i=headerRow+1;i<grid.length;i++){
     const row = grid[i];
     const tanggalStr = (row[idxTanggal] ?? "").trim();
     const lap = (row[idxLap] ?? "").trim();
     const op  = (row[idxOp] ?? "").trim();
-
     if(!tanggalStr && !lap && !op) continue;
 
     const date = toDateFlexible(tanggalStr);
-    const total = countTasks(lap) + countTasks(op);
 
-    out.push({ date, lapangan: lap, operator: op, total, tanggalRaw: tanggalStr });
+    // LIBUR RULE:
+    // - jika total task 0 (kosong semua) => libur
+    // - atau jika ada keyword libur/off/cuti di salah satu kolom
+    const combinedLower = (lap + " " + op).toLowerCase();
+    const keywordLibur = LIBUR_KEYWORDS.some(k => combinedLower.includes(k));
+    const totalCount = countTasks(lap) + countTasks(op);
+    const isLibur = keywordLibur || totalCount === 0;
+
+    // kalau libur, tampilkan teks "LIBUR" otomatis
+    const lapFinal = isLibur ? "LIBUR" : lap;
+    const opFinal  = isLibur ? "LIBUR" : op;
+    const totalFinal = isLibur ? 0 : totalCount;
+
+    const isToday = date ? isSameDayUTC(date, tday) : false;
+
+    out.push({
+      date,
+      lapangan: lapFinal,
+      operator: opFinal,
+      total: totalFinal,
+      tanggalRaw: tanggalStr,
+      isLibur,
+      isToday
+    });
   }
   return out;
 }
-
+function finalizeRows(rows){
+  rows.sort((a,b)=>{
+    const ta = a.date ? a.date.getTime() : -Infinity;
+    const tb = b.date ? b.date.getTime() : -Infinity;
+    return ta - tb;
+  });
+  return rows;
+}
 async function loadRowsFromGoogleSheet(){
-  // 1) ambil pubhtml untuk dapat gid tab by name
   const mainHtml = await fetchText(PUBLISHED_HTML_URL);
   const gidMap = getGidMapFromPubhtml(mainHtml);
 
   let gid = gidMap.get(TARGET_SHEET_NAME.toLowerCase()) || "0";
   document.getElementById("debugGid").textContent = `gid: ${gid}`;
 
-  // 2) coba fetch CSV dengan gid tsb
   const url = pubCsvUrl(PUBLISHED_HTML_URL, gid);
-  document.getElementById("debugSource").textContent = "source: csv";
   const csvText = await fetchText(url);
-
   const grid = parseCSV(csvText);
 
-  // kalau grid terlalu kecil, mungkin gid salah -> coba fallback beberapa gid umum
   if(grid.length < 2){
     const fallbacks = ["0","1","2","3","4","5","6","7","8","9"];
     for(const g of fallbacks){
@@ -620,18 +720,7 @@ async function loadRowsFromGoogleSheet(){
       }
     }
   }
-
   return finalizeRows(extractRowsFromGrid(grid));
-}
-
-function finalizeRows(rows){
-  // sort by date when present
-  rows.sort((a,b)=>{
-    const ta = a.date ? a.date.getTime() : -Infinity;
-    const tb = b.date ? b.date.getTime() : -Infinity;
-    return ta - tb;
-  });
-  return rows;
 }
 
 /***********************
@@ -647,16 +736,20 @@ function renderChips(filtered){
   for(const r of filtered){
     if(!busiest || (r.total||0) > (busiest.total||0)) busiest = r;
   }
-
   const busiestLabel = busiest
     ? (busiest.date ? fmtDateUTC(busiest.date) : (busiest.tanggalRaw || "-"))
     : "-";
+
+  const todayCount = filtered.filter(r=>r.isToday).length;
+  const liburCount = filtered.filter(r=>r.isLibur).length;
 
   chips.innerHTML = `
     <div class="chip">Baris tampil: <b>${totalRows}</b></div>
     <div class="chip">Total task: <b>${totalTasks}</b></div>
     <div class="chip">Rata-rata task/hari: <b>${avgTasks.toFixed(2)}</b></div>
     <div class="chip">Hari tersibuk: <b>${busiestLabel}</b> (<b>${busiest ? busiest.total : 0}</b>)</div>
+    <div class="chip">Hari ini: <b>${todayCount}</b></div>
+    <div class="chip">Libur: <b>${liburCount}</b></div>
   `;
 }
 
@@ -673,17 +766,47 @@ function renderTable(filtered){
     return tb - ta;
   });
 
-  tbody.innerHTML = sorted.map(r => {
+  // Tambahkan "separator LIVE TODAY" tepat sebelum baris hari ini (kalau ada)
+  const firstTodayIdx = sorted.findIndex(r => r.isToday);
+  let html = "";
+
+  if(firstTodayIdx !== -1){
+    html += `
+      <tr class="today-sep">
+        <td colspan="4">
+          <div class="sep-inner">
+            <span class="live-dot"></span>
+            <span class="blink-text">LIVE • TASK HARI INI</span>
+            <span class="live-dot"></span>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  html += sorted.map((r, idx) => {
     const dateLabel = r.date ? fmtDateUTC(r.date) : (r.tanggalRaw || "-");
+
+    const rowClass = [
+      r.isLibur ? "libur-row" : "",
+      r.isToday ? "today-row" : ""
+    ].filter(Boolean).join(" ");
+
+    const badge = r.isLibur
+      ? `<span class="libur-tag"><span class="live-dot" style="animation:none; box-shadow:none;"></span> LIBUR</span>`
+      : (r.isToday ? `<span class="today-badge"><span class="live-dot"></span> <span class="blink-text">LIVE TODAY</span></span>` : "");
+
     return `
-      <tr>
-        <td class="td-date">${escapeHtml(dateLabel)}</td>
+      <tr class="${rowClass}">
+        <td class="td-date">${escapeHtml(dateLabel)} ${badge}</td>
         <td class="tasks">${escapeHtml(r.lapangan)}</td>
         <td class="tasks">${escapeHtml(r.operator)}</td>
         <td class="td-date">${r.total ?? 0}</td>
       </tr>
     `;
   }).join("");
+
+  tbody.innerHTML = html;
 }
 
 function aggregateForTrend(rows, mode){
@@ -696,6 +819,8 @@ function aggregateForTrend(rows, mode){
     else if(mode === "monthly") key = monthKey(r.date);
     else if(mode === "yearly") key = yearKey(r.date);
     else key = fmtDateUTC(r.date);
+
+    // libur dihitung 0 task (sudah)
     map.set(key, (map.get(key) || 0) + (r.total || 0));
   }
   const labels = Array.from(map.keys()).sort();
@@ -706,8 +831,7 @@ function topBusyDays(rows, topN=10){
   const daily = new Map();
   for(const r of rows){
     if(!r.date) continue;
-    const k = fmtDateUTC(r.date);
-    daily.set(k, (daily.get(k) || 0) + (r.total || 0));
+    daily.set(fmtDateUTC(r.date), (daily.get(fmtDateUTC(r.date)) || 0) + (r.total || 0));
   }
   const pairs = Array.from(daily.entries())
     .map(([k,v])=>({k,v}))
@@ -718,7 +842,7 @@ function topBusyDays(rows, topN=10){
 
 function renderCharts(filtered){
   const mode = document.getElementById("mode").value;
-  const chartable = filtered.filter(r => r.date);
+  const chartable = filtered.filter(r => r.date); // grafik butuh tanggal
 
   const trend = aggregateForTrend(chartable, mode);
   if(chartTrend) chartTrend.destroy();
@@ -758,7 +882,7 @@ function applyFilters(){
   const to   = toVal ? new Date(toVal + "T00:00:00Z") : null;
 
   const filtered = RAW_ROWS.filter(r => {
-    if((from || to) && !r.date) return false;     // kalau user pakai range, hanya baris yg ada tanggal
+    if((from || to) && !r.date) return false;
     if(r.date && !within(r.date, from, to)) return false;
     if(q){
       const hay = (String(r.lapangan||"") + "\n" + String(r.operator||"")).toLowerCase();
@@ -821,7 +945,38 @@ async function loadAll(){
     document.getElementById("tbody").innerHTML =
       `<tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>`;
 
-    RAW_ROWS = await loadRowsFromGoogleSheet();
+    const mainHtml = await fetchText(PUBLISHED_HTML_URL);
+    const gidMap = (function(){
+      const doc = new DOMParser().parseFromString(mainHtml, "text/html");
+      const links = [...doc.querySelectorAll('a[href*="gid="]')];
+      const map = new Map();
+      for(const a of links){
+        const name = (a.textContent || "").trim();
+        const href = a.getAttribute("href") || "";
+        const m = href.match(/gid=(\d+)/);
+        if(!name || !m) continue;
+        map.set(name.toLowerCase(), m[1]);
+      }
+      return map;
+    })();
+
+    let gid = gidMap.get(TARGET_SHEET_NAME.toLowerCase()) || "0";
+    document.getElementById("debugGid").textContent = `gid: ${gid}`;
+
+    const url = (function(){
+      const base = PUBLISHED_HTML_URL.replace(/\/pubhtml(\?.*)?$/i, "/pub");
+      const p = new URLSearchParams();
+      p.set("gid", gid);
+      p.set("single", "true");
+      p.set("output", "csv");
+      return `${base}?${p.toString()}`;
+    })();
+
+    const csvText = await fetchText(url);
+    const grid = parseCSV(csvText);
+    const rows = finalizeRows(extractRowsFromGrid(grid));
+
+    RAW_ROWS = rows;
     if(!RAW_ROWS.length) throw new Error("Data kosong / tidak terbaca dari sheet.");
 
     setDefaultDateRange();
