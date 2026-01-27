@@ -11,7 +11,6 @@
   <style>
     :root{
       --bg:#0b1220;
-      --card:#0f1a33;
       --muted:#9fb0d0;
       --text:#e8eeff;
       --line:rgba(255,255,255,.08);
@@ -34,8 +33,6 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       line-height:1.5;
     }
-    a{ color:var(--accent); text-decoration:none; }
-    a:hover{ text-decoration:underline; }
 
     header{
       position: sticky;
@@ -54,12 +51,7 @@
       justify-content:space-between;
       gap:16px;
     }
-    .brand{
-      display:flex;
-      flex-direction:column;
-      gap:2px;
-      min-width:260px;
-    }
+    .brand{ display:flex; flex-direction:column; gap:2px; min-width:260px; }
     .brand h1{ margin:0; font-size:16px; letter-spacing:.3px; }
     .brand .sub{ font-size:12px; color:var(--muted); }
 
@@ -84,6 +76,7 @@
       gap:8px;
       align-items:center;
       white-space:nowrap;
+      text-decoration:none;
     }
     .btn:hover{ background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.14); }
     .btn:active{ transform: translateY(1px); }
@@ -96,11 +89,7 @@
       border-color: rgba(122,167,255,.5);
     }
 
-    .container{
-      max-width:1200px;
-      margin:0 auto;
-      padding:24px;
-    }
+    .container{ max-width:1200px; margin:0 auto; padding:24px; }
 
     .card{
       background: linear-gradient(to bottom right, rgba(255,255,255,.06), rgba(255,255,255,.03));
@@ -111,6 +100,7 @@
     }
     .card h2{ margin:0 0 10px; font-size:14px; letter-spacing:.2px; }
     .muted{ color:var(--muted); }
+    .mini{ font-size:12px; color:var(--muted); margin-top:6px; }
 
     .controls{
       display:grid;
@@ -138,12 +128,7 @@
       box-shadow: 0 0 0 3px rgba(122,167,255,.15);
     }
 
-    .chips{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-top:10px;
-    }
+    .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
     .chip{
       padding:8px 10px;
       border-radius:999px;
@@ -164,8 +149,6 @@
       margin-top:12px;
     }
     @media (max-width: 980px){ .split{ grid-template-columns: 1fr; } }
-
-    .mini{ font-size:12px; color:var(--muted); margin-top:6px; }
 
     table{
       width:100%;
@@ -200,6 +183,7 @@
       font-size:12px;
       color:var(--muted);
       margin-top:8px;
+      flex-wrap:wrap;
     }
     .dot{
       width:8px; height:8px; border-radius:50%;
@@ -209,13 +193,7 @@
     .dot.ok{ background: var(--good); box-shadow: 0 0 0 3px rgba(93,240,166,.12); }
     .dot.bad{ background: var(--bad); box-shadow: 0 0 0 3px rgba(255,122,122,.12); }
 
-    .footer{
-      margin-top:18px;
-      color:var(--muted);
-      font-size:12px;
-      text-align:center;
-      opacity:.9;
-    }
+    .footer{ margin-top:18px; color:var(--muted); font-size:12px; text-align:center; opacity:.9; }
 
     /* Modal full-screen chart */
     .modal{
@@ -249,11 +227,7 @@
       justify-content:space-between;
       gap:10px;
     }
-    .modal-title{
-      font-weight:700;
-      font-size:14px;
-      letter-spacing:.2px;
-    }
+    .modal-title{ font-weight:700; font-size:14px; letter-spacing:.2px; }
     .btn-close{
       border:1px solid var(--line);
       background: rgba(255,255,255,.06);
@@ -273,6 +247,14 @@
     }
     .modal-body canvas{ width:100% !important; height:100% !important; }
     .clickable{ cursor: zoom-in; }
+    .pill{
+      font-family: var(--mono);
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color: rgba(232,238,255,.92);
+    }
   </style>
 </head>
 
@@ -344,6 +326,7 @@
     <div style="margin-top:14px;">
       <h2>Daftar Laporan (Hasil Filter)</h2>
       <div class="mini">Kolom: Tanggal (A4), Tugas Tim Lapangan (B4), Tugas Tim Operator (C4)</div>
+
       <table>
         <thead>
           <tr>
@@ -361,6 +344,8 @@
       <div class="status">
         <span class="dot" id="statusDot"></span>
         <span id="statusText">Menyiapkan…</span>
+        <span class="pill" id="debugGid" title="gid sheet yang dipakai">gid: -</span>
+        <span class="pill" id="debugSource" title="endpoint data yang dipakai">source: -</span>
       </div>
     </div>
   </div>
@@ -390,18 +375,17 @@
 const PUBLISHED_HTML_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtAXhDpGqAuq5YjCpovQDg5SftjAGYllHqQ4F-VvxKWxzgxSDpxuqRGEC6xlgS57unBdJ2PsZnvlx5/pubhtml";
 
-const TARGET_SHEET_NAME = "Kegiatan";      // tab yang dipakai untuk laporan harian
+const TARGET_SHEET_NAME = "Kegiatan";
 const KEUANGAN_PASSWORD = "AdvertisingJaya";
 
 /***********************
  * STATE
  ***********************/
-let RAW_ROWS = [];          // {date, lapangan, operator, total}
-let chartTrend, chartTop;
-let modalChart;
+let RAW_ROWS = []; // {date, lapangan, operator, total, tanggalRaw}
+let chartTrend, chartTop, modalChart;
 
 /***********************
- * UI HELPERS
+ * UI
  ***********************/
 function setStatus(type, text){
   const dot = document.getElementById("statusDot");
@@ -418,20 +402,13 @@ function escapeHtml(str){
 }
 
 /***********************
- * PARSE TASKS
+ * TASK COUNT
  ***********************/
 function countTasks(text){
   if(!text) return 0;
-  const lines = String(text)
-    .split(/\r?\n/)
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  // hitung bullet "-" sebagai task
+  const lines = String(text).split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
   const bullet = lines.filter(l => l.startsWith("-")).length;
   if(bullet > 0) return bullet;
-
-  // fallback: per baris
   if(lines.length === 1 && lines[0].includes(" - ")){
     return lines[0].split(" - ").map(s=>s.trim()).filter(Boolean).length;
   }
@@ -443,17 +420,15 @@ function countTasks(text){
  ***********************/
 function toDateFlexible(v){
   if(!v) return null;
-
-  // try: 2026-01-27 or 1/27/2026 etc.
+  // coba parse default JS (bisa baca 1/27/2026 dll)
   const d = new Date(v);
   if(!isNaN(d.getTime())){
     return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   }
-
-  // try: dd/mm/yyyy
+  // coba dd/mm/yyyy
   const m = String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if(m){
-    const mm = Number(m[1]), dd = Number(m[2]), yy = Number(m[3]);
+    const dd = Number(m[1]), mm = Number(m[2]), yy = Number(m[3]);
     const d2 = new Date(Date.UTC(yy, mm-1, dd));
     if(!isNaN(d2.getTime())) return d2;
   }
@@ -474,7 +449,6 @@ function within(d, from, to){
   return true;
 }
 function isoWeekKey(d){
-  // ISO week in UTC
   const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
   const day = date.getUTCDay() || 7;
   date.setUTCDate(date.getUTCDate() + 4 - day);
@@ -482,47 +456,104 @@ function isoWeekKey(d){
   const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
   return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2,"0")}`;
 }
-function monthKey(d){
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`;
-}
+function monthKey(d){ return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`; }
 function yearKey(d){ return String(d.getUTCFullYear()); }
 
 /***********************
- * GOOGLE PUBLISHED HTML PARSER (NO GVIZ)
- * - Ambil pubhtml, cari gid untuk tab "Kegiatan"
- * - Fetch pubhtml?gid=...&single=true
- * - Parse table "waffle", cari header "Tanggal" dll, ambil 3 kolom
+ * CSV PARSER (robust enough for Google Sheets)
  ***********************/
-async function fetchPublishedHtml(url){
+function parseCSV(text){
+  const rows = [];
+  let row = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for(let i=0;i<text.length;i++){
+    const ch = text[i];
+
+    if(inQuotes){
+      if(ch === '"'){
+        // escaped quote
+        if(text[i+1] === '"'){
+          cur += '"';
+          i++;
+        }else{
+          inQuotes = false;
+        }
+      }else{
+        cur += ch;
+      }
+    }else{
+      if(ch === '"'){
+        inQuotes = true;
+      }else if(ch === ","){
+        row.push(cur);
+        cur = "";
+      }else if(ch === "\n"){
+        row.push(cur);
+        rows.push(row);
+        row = [];
+        cur = "";
+      }else if(ch === "\r"){
+        // ignore
+      }else{
+        cur += ch;
+      }
+    }
+  }
+  // last cell
+  row.push(cur);
+  rows.push(row);
+
+  // trim trailing empty lines
+  while(rows.length && rows[rows.length-1].every(c => String(c||"").trim() === "")) rows.pop();
+  return rows;
+}
+
+/***********************
+ * GET gid from pubhtml (best effort)
+ ***********************/
+async function fetchText(url){
   const res = await fetch(url, { cache:"no-store" });
-  const text = await res.text();
-  return text;
+  return await res.text();
 }
 
-function parseGidFromPubhtml(html, sheetName){
+function getGidMapFromPubhtml(html){
+  // cari semua link yg mengandung gid=...
   const doc = new DOMParser().parseFromString(html, "text/html");
-  // Biasanya tab ada di link yang mengandung "gid="
   const links = [...doc.querySelectorAll('a[href*="gid="]')];
-  const hit = links.find(a => a.textContent.trim().toLowerCase() === sheetName.trim().toLowerCase());
-  if(!hit) return null;
-  const href = hit.getAttribute("href") || "";
-  const m = href.match(/gid=(\d+)/);
-  return m ? m[1] : null;
+  const map = new Map(); // nameLower -> gid
+  for(const a of links){
+    const name = (a.textContent || "").trim();
+    const href = a.getAttribute("href") || "";
+    const m = href.match(/gid=(\d+)/);
+    if(!name || !m) continue;
+    map.set(name.toLowerCase(), m[1]);
+  }
+  return map;
 }
 
-function extractRowsFromSingleSheetHtml(html){
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const table = doc.querySelector("table.waffle");
-  if(!table) throw new Error("Table sheet tidak ditemukan (table.waffle)");
+/***********************
+ * LOAD DATA via CSV endpoint (works much more reliably than parsing table.waffle)
+ * Endpoint pattern for "published" spreadsheets:
+ *   .../pub?gid=XXXX&single=true&output=csv
+ ***********************/
+function pubCsvUrl(pubhtml, gid){
+  // swap /pubhtml -> /pub
+  const base = pubhtml.replace(/\/pubhtml(\?.*)?$/i, "/pub");
+  const p = new URLSearchParams();
+  p.set("gid", gid);
+  p.set("single", "true");
+  p.set("output", "csv");
+  return `${base}?${p.toString()}`;
+}
 
-  const trs = [...table.querySelectorAll("tr")];
-  // Convert to 2D text array
-  const grid = trs.map(tr => [...tr.querySelectorAll("td,th")].map(td => td.textContent.trim()));
-
-  // cari baris header yang ada "Tanggal" dan "Tugas" (lapangan/operator)
+function extractRowsFromGrid(grid){
+  // grid: array of array cells
+  // cari header row: Tanggal / Tugas Tim Lapangan / Tugas Tim Operator
   let headerRow = -1;
   for(let i=0;i<grid.length;i++){
-    const row = grid[i].map(x=>String(x||"").toLowerCase());
+    const row = grid[i].map(x=>String(x||"").toLowerCase().trim());
     const hasTanggal = row.some(c => c === "tanggal" || c.includes("tanggal"));
     const hasLap = row.some(c => c.includes("tugas tim lapangan"));
     const hasOp  = row.some(c => c.includes("tugas tim operator"));
@@ -531,64 +562,75 @@ function extractRowsFromSingleSheetHtml(html){
       break;
     }
   }
-  if(headerRow === -1){
-    // fallback: asumsi A3/B3/C3 header seperti gambar
-    headerRow = 2;
-  }
+  // fallback ke baris 0 kalau tidak ketemu
+  if(headerRow === -1) headerRow = 0;
 
-  // cari index kolom untuk 3 header
-  const header = grid[headerRow].map(x=>String(x||"").toLowerCase());
+  const header = grid[headerRow].map(x=>String(x||"").toLowerCase().trim());
   let idxTanggal = header.findIndex(c => c.includes("tanggal"));
   let idxLap = header.findIndex(c => c.includes("tugas tim lapangan"));
   let idxOp  = header.findIndex(c => c.includes("tugas tim operator"));
-
-  // fallback: A,B,C
   if(idxTanggal < 0) idxTanggal = 0;
   if(idxLap < 0) idxLap = 1;
   if(idxOp < 0) idxOp = 2;
 
-  // data mulai setelah header
   const out = [];
-  for(let i=headerRow+1; i<grid.length; i++){
+  for(let i=headerRow+1;i<grid.length;i++){
     const row = grid[i];
-    const tanggalStr = row[idxTanggal] ?? "";
-    const lap = row[idxLap] ?? "";
-    const op  = row[idxOp] ?? "";
+    const tanggalStr = (row[idxTanggal] ?? "").trim();
+    const lap = (row[idxLap] ?? "").trim();
+    const op  = (row[idxOp] ?? "").trim();
 
-    // stop kalau baris kosong total
     if(!tanggalStr && !lap && !op) continue;
 
     const date = toDateFlexible(tanggalStr);
-    // kalau tanggal tidak kebaca tapi ada text, tetap masuk (biar kelihatan)
     const total = countTasks(lap) + countTasks(op);
+
     out.push({ date, lapangan: lap, operator: op, total, tanggalRaw: tanggalStr });
   }
-
-  // filter yang benar-benar punya sesuatu
-  return out.filter(r => (r.tanggalRaw || r.lapangan || r.operator));
+  return out;
 }
 
 async function loadRowsFromGoogleSheet(){
-  // 1) fetch main pubhtml untuk dapat gid tab "Kegiatan"
-  const mainHtml = await fetchPublishedHtml(PUBLISHED_HTML_URL);
-  let gid = parseGidFromPubhtml(mainHtml, TARGET_SHEET_NAME);
+  // 1) ambil pubhtml untuk dapat gid tab by name
+  const mainHtml = await fetchText(PUBLISHED_HTML_URL);
+  const gidMap = getGidMapFromPubhtml(mainHtml);
 
-  // fallback: kalau tidak ketemu, coba gid=0 (umumnya sheet pertama)
-  if(!gid) gid = "0";
+  let gid = gidMap.get(TARGET_SHEET_NAME.toLowerCase()) || "0";
+  document.getElementById("debugGid").textContent = `gid: ${gid}`;
 
-  // 2) fetch single sheet HTML
-  const singleUrl = `${PUBLISHED_HTML_URL}?gid=${encodeURIComponent(gid)}&single=true`;
-  const singleHtml = await fetchPublishedHtml(singleUrl);
+  // 2) coba fetch CSV dengan gid tsb
+  const url = pubCsvUrl(PUBLISHED_HTML_URL, gid);
+  document.getElementById("debugSource").textContent = "source: csv";
+  const csvText = await fetchText(url);
 
-  const rows = extractRowsFromSingleSheetHtml(singleHtml);
+  const grid = parseCSV(csvText);
 
-  // urutkan berdasarkan date kalau ada
+  // kalau grid terlalu kecil, mungkin gid salah -> coba fallback beberapa gid umum
+  if(grid.length < 2){
+    const fallbacks = ["0","1","2","3","4","5","6","7","8","9"];
+    for(const g of fallbacks){
+      if(g === gid) continue;
+      const u2 = pubCsvUrl(PUBLISHED_HTML_URL, g);
+      const t2 = await fetchText(u2);
+      const g2 = parseCSV(t2);
+      if(g2.length >= 2){
+        gid = g;
+        document.getElementById("debugGid").textContent = `gid: ${gid}`;
+        return finalizeRows(extractRowsFromGrid(g2));
+      }
+    }
+  }
+
+  return finalizeRows(extractRowsFromGrid(grid));
+}
+
+function finalizeRows(rows){
+  // sort by date when present
   rows.sort((a,b)=>{
     const ta = a.date ? a.date.getTime() : -Infinity;
     const tb = b.date ? b.date.getTime() : -Infinity;
     return ta - tb;
   });
-
   return rows;
 }
 
@@ -628,7 +670,7 @@ function renderTable(filtered){
   const sorted = filtered.slice().sort((a,b)=>{
     const ta = a.date ? a.date.getTime() : -Infinity;
     const tb = b.date ? b.date.getTime() : -Infinity;
-    return tb - ta; // terbaru dulu
+    return tb - ta;
   });
 
   tbody.innerHTML = sorted.map(r => {
@@ -647,14 +689,13 @@ function renderTable(filtered){
 function aggregateForTrend(rows, mode){
   const map = new Map();
   for(const r of rows){
-    if(!r.date) continue; // untuk trend butuh tanggal valid
+    if(!r.date) continue;
     let key;
     if(mode === "daily") key = fmtDateUTC(r.date);
     else if(mode === "weekly") key = isoWeekKey(r.date);
     else if(mode === "monthly") key = monthKey(r.date);
     else if(mode === "yearly") key = yearKey(r.date);
     else key = fmtDateUTC(r.date);
-
     map.set(key, (map.get(key) || 0) + (r.total || 0));
   }
   const labels = Array.from(map.keys()).sort();
@@ -664,7 +705,7 @@ function aggregateForTrend(rows, mode){
 function topBusyDays(rows, topN=10){
   const daily = new Map();
   for(const r of rows){
-    if(!r.date) continue; // top busy by tanggal valid
+    if(!r.date) continue;
     const k = fmtDateUTC(r.date);
     daily.set(k, (daily.get(k) || 0) + (r.total || 0));
   }
@@ -672,17 +713,13 @@ function topBusyDays(rows, topN=10){
     .map(([k,v])=>({k,v}))
     .sort((a,b)=> b.v - a.v)
     .slice(0, topN);
-
   return { labels: pairs.map(p=>p.k), values: pairs.map(p=>p.v) };
 }
 
 function renderCharts(filtered){
   const mode = document.getElementById("mode").value;
-
-  // NOTE: Grafik hanya pakai baris yang tanggalnya valid
   const chartable = filtered.filter(r => r.date);
 
-  // Trend
   const trend = aggregateForTrend(chartable, mode);
   if(chartTrend) chartTrend.destroy();
   chartTrend = new Chart(document.getElementById("chartTrend"), {
@@ -695,7 +732,6 @@ function renderCharts(filtered){
     }
   });
 
-  // Top busy
   const top = topBusyDays(chartable, 10);
   if(chartTop) chartTop.destroy();
   chartTop = new Chart(document.getElementById("chartTopBusy"), {
@@ -722,13 +758,12 @@ function applyFilters(){
   const to   = toVal ? new Date(toVal + "T00:00:00Z") : null;
 
   const filtered = RAW_ROWS.filter(r => {
+    if((from || to) && !r.date) return false;     // kalau user pakai range, hanya baris yg ada tanggal
     if(r.date && !within(r.date, from, to)) return false;
     if(q){
       const hay = (String(r.lapangan||"") + "\n" + String(r.operator||"")).toLowerCase();
       if(!hay.includes(q)) return false;
     }
-    // jika user set range tapi baris tanpa tanggal => disembunyikan (biar tidak nyasar)
-    if((from || to) && !r.date) return false;
     return true;
   });
 
@@ -743,11 +778,9 @@ function applyFilters(){
 function setDefaultDateRange(){
   const dated = RAW_ROWS.filter(r => r.date);
   if(!dated.length) return;
-
   const first = dated[0].date;
   const last  = dated[dated.length-1].date;
 
-  // default: 60 hari terakhir
   const from60 = new Date(last.getTime() - 59 * 86400000);
   const from = (from60.getTime() > first.getTime()) ? from60 : first;
 
@@ -756,26 +789,23 @@ function setDefaultDateRange(){
 }
 
 /***********************
- * MODAL FULLSCREEN CHART
+ * MODAL FULLSCREEN
  ***********************/
 function openModalChart(title, srcChart){
   const modal = document.getElementById("modal");
   document.getElementById("modalTitle").textContent = title;
 
-  // clone config from existing chart
   const cfg = {
     type: srcChart.config.type,
     data: JSON.parse(JSON.stringify(srcChart.data)),
     options: JSON.parse(JSON.stringify(srcChart.options))
   };
-  // make it a bit roomier
   cfg.options.maintainAspectRatio = false;
 
   if(modalChart) modalChart.destroy();
   modal.classList.add("open");
   modalChart = new Chart(document.getElementById("modalCanvas"), cfg);
 }
-
 function closeModal(){
   const modal = document.getElementById("modal");
   modal.classList.remove("open");
@@ -813,7 +843,6 @@ function setupEvents(){
   document.getElementById("mode").addEventListener("change", applyFilters);
   document.getElementById("dateFrom").addEventListener("change", applyFilters);
   document.getElementById("dateTo").addEventListener("change", applyFilters);
-
   document.getElementById("search").addEventListener("input", () => {
     clearTimeout(window.__t);
     window.__t = setTimeout(applyFilters, 180);
@@ -833,7 +862,6 @@ function setupEvents(){
 
   document.getElementById("btnSource").href = PUBLISHED_HTML_URL;
 
-  // Modal close
   document.getElementById("modalClose").addEventListener("click", closeModal);
   document.getElementById("modal").addEventListener("click", (e) => {
     if(e.target.id === "modal") closeModal();
@@ -842,7 +870,6 @@ function setupEvents(){
     if(e.key === "Escape") closeModal();
   });
 
-  // Click charts to fullscreen
   document.getElementById("chartTrend").addEventListener("click", () => {
     if(chartTrend) openModalChart("Grafik Aktivitas (Total Task)", chartTrend);
   });
