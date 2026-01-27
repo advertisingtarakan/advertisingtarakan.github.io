@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Uploader Dokumentasi Pemasangan</title>
+
+  <!-- JSZip for creating ZIP in browser -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --text:#e8eeff;
+      --muted:#9fb0d0;
+      --line:rgba(255,255,255,.08);
+      --card: rgba(255,255,255,.06);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(1200px 700px at 20% 0%, rgba(122,167,255,.16), transparent 60%),
+                  radial-gradient(1000px 600px at 90% 30%, rgba(93,240,166,.12), transparent 55%),
+                  var(--bg);
+      line-height:1.5;
+    }
+    .container{
+      max-width:1100px;
+      margin:0 auto;
+      padding:24px;
+    }
+    .hero{
+      padding:18px;
+      border:1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(to bottom right, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+    }
+    .hero h1{ margin:0 0 6px; font-size:20px; }
+    .hero p{ margin:0; color:var(--muted); font-size:13px; }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr .9fr;
+      gap:16px;
+      margin-top:16px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+    .card{
+      border:1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(to bottom right, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      padding:16px;
+    }
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    input[type="text"], select{
+      width:100%;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+    }
+    input:focus, select:focus{
+      border-color: rgba(122,167,255,.55);
+      box-shadow: 0 0 0 3px rgba(122,167,255,.15);
+    }
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 650px){
+      .row{ grid-template-columns: 1fr; }
+    }
+
+    .drop{
+      border:2px dashed rgba(255,255,255,.18);
+      border-radius: 18px;
+      padding:18px;
+      background: rgba(0,0,0,.14);
+      min-height:220px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap:10px;
+      text-align:center;
+      transition: .15s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .drop.dragover{
+      border-color: rgba(122,167,255,.7);
+      background: rgba(122,167,255,.08);
+      transform: translateY(-1px);
+    }
+    .kbd{
+      font-family: var(--mono);
+      padding:2px 6px;
+      border-radius: 8px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      font-size:12px;
+      color: rgba(232,238,255,.92);
+    }
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:13px;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      white-space:nowrap;
+      text-decoration:none;
+    }
+    .btn:hover{ background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.14); }
+    .btn-primary{
+      background: rgba(122,167,255,.18);
+      border-color: rgba(122,167,255,.35);
+    }
+    .btn-primary:hover{
+      background: rgba(122,167,255,.24);
+      border-color: rgba(122,167,255,.5);
+    }
+    .btn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+    }
+    .muted{ color:var(--muted); }
+    .small{ font-size:12px; }
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:12px;
+    }
+    .item{
+      display:grid;
+      grid-template-columns: 72px 1fr auto;
+      gap:10px;
+      align-items:center;
+      padding:10px;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.12);
+    }
+    .thumb{
+      width:72px; height:52px;
+      border-radius: 10px;
+      border:1px solid var(--line);
+      object-fit:cover;
+      background: rgba(255,255,255,.04);
+    }
+    .meta b{ display:block; font-size:13px; }
+    .meta div{ font-size:12px; color:var(--muted); }
+    .pill{
+      font-family: var(--mono);
+      font-size:12px;
+      padding:2px 8px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color: rgba(232,238,255,.92);
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .warn{
+      border-left: 3px solid rgba(255,210,122,.8);
+      padding-left:10px;
+    }
+    .footer{
+      margin-top:18px;
+      color:var(--muted);
+      font-size:12px;
+      text-align:center;
+      opacity:.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <h1>Uploader Dokumentasi Pemasangan</h1>
+      <p>
+        Drag & drop gambar ke area upload, atau paste dengan <span class="kbd">Ctrl + V</span>.
+        Setelah itu pilih kategori + isi judul, lalu buat paket <b>ZIP</b> untuk di-upload ke GitHub (static friendly).
+      </p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2 style="margin:0 0 10px; font-size:14px;">Upload Area</h2>
+        <div id="drop" class="drop" tabindex="0">
+          <div style="font-size:28px;">🖼️</div>
+          <div style="font-weight:900;">Drag & Drop gambar di sini</div>
+          <div class="muted small">
+            atau paste: <span class="kbd">Ctrl + V</span> • atau pilih file manual
+          </div>
+          <input id="filePicker" type="file" accept="image/*" multiple style="display:none;" />
+          <button class="btn" id="btnPick">📁 Pilih File</button>
+          <div class="muted small warn">
+            GitHub Pages tidak bisa upload langsung ke repo dari browser. Jadi kita buat <b>ZIP</b> berisi folder kategori + gambar + <code>gallery-manifest.json</code>.
+          </div>
+        </div>
+
+        <div class="list" id="fileList"></div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 10px; font-size:14px;">Detail Upload</h2>
+
+        <div class="row">
+          <div>
+            <label for="category">Kategori (wajib)</label>
+            <select id="category">
+              <option value="">-- pilih kategori --</option>
+              <option value="neonbox">Neonbox</option>
+              <option value="plang">Plang</option>
+              <option value="huruf-timbul">Huruf Timbul</option>
+              <option value="cutting-akrilik">Cutting Akrilik</option>
+              <option value="jasa-pasang-sticker">Jasa Pasang Sticker</option>
+            </select>
+          </div>
+          <div>
+            <label>Tanggal Upload (otomatis)</label>
+            <div class="pill" id="todayPill">-</div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <label for="title">Judul (wajib)</label>
+          <input id="title" type="text" placeholder="Contoh: Pemasangan Neonbox Pelabuhan" />
+        </div>
+
+        <div class="actions">
+          <div class="muted small">
+            Output: folder <b>kategori</b> (huruf kecil) + file rename otomatis.
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn" id="btnClear">🧹 Clear</button>
+            <button class="btn btn-primary" id="btnZip" disabled>📦 Generate Paket Upload (ZIP)</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;" class="muted small">
+          <b>Nama file otomatis:</b><br/>
+          <code>YYYY-MM-DD__judul-slug__timestamp.ext</code><br/><br/>
+          <b>Manifest untuk gallery:</b> <code>gallery-manifest.json</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">© <span id="year"></span> • Updoc • Static-friendly uploader</div>
+  </div>
+
+<script>
+(() => {
+  const drop = document.getElementById("drop");
+  const filePicker = document.getElementById("filePicker");
+  const btnPick = document.getElementById("btnPick");
+  const fileList = document.getElementById("fileList");
+  const category = document.getElementById("category");
+  const title = document.getElementById("title");
+  const btnZip = document.getElementById("btnZip");
+  const btnClear = document.getElementById("btnClear");
+  const todayPill = document.getElementById("todayPill");
+
+  const MANIFEST_NAME = "gallery-manifest.json";
+
+  const state = {
+    files: [] // {file: File, previewUrl: string}
+  };
+
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function todayISO(){
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  }
+  const TODAY = todayISO();
+  todayPill.textContent = TODAY;
+
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  function slugify(s){
+    return String(s || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 70) || "tanpa-judul";
+  }
+
+  function extFromFile(file){
+    const name = file.name || "";
+    const m = name.match(/\.([a-zA-Z0-9]+)$/);
+    if(m) return m[1].toLowerCase();
+    // fallback based on mime
+    const mime = file.type || "";
+    if(mime.includes("png")) return "png";
+    if(mime.includes("jpeg") || mime.includes("jpg")) return "jpg";
+    if(mime.includes("webp")) return "webp";
+    return "bin";
+  }
+
+  function validate(){
+    const ok = state.files.length > 0 && category.value && title.value.trim().length > 0;
+    btnZip.disabled = !ok;
+  }
+
+  function addFiles(files){
+    for(const f of files){
+      if(!f.type || !f.type.startsWith("image/")) continue;
+      const url = URL.createObjectURL(f);
+      state.files.push({ file: f, previewUrl: url });
+    }
+    renderList();
+    validate();
+  }
+
+  function clearAll(){
+    for(const it of state.files){
+      try{ URL.revokeObjectURL(it.previewUrl); }catch(_){}
+    }
+    state.files = [];
+    renderList();
+    validate();
+  }
+
+  function removeAt(idx){
+    const it = state.files[idx];
+    if(!it) return;
+    try{ URL.revokeObjectURL(it.previewUrl); }catch(_){}
+    state.files.splice(idx, 1);
+    renderList();
+    validate();
+  }
+
+  function renderList(){
+    if(state.files.length === 0){
+      fileList.innerHTML = `<div class="muted small">Belum ada file. Drop / paste gambar untuk mulai.</div>`;
+      return;
+    }
+    fileList.innerHTML = "";
+    state.files.forEach((it, idx) => {
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <img class="thumb" src="${it.previewUrl}" alt="preview" />
+        <div class="meta">
+          <b>${escapeHtml(it.file.name)}</b>
+          <div>${escapeHtml((it.file.type || "image"))} • ${(it.file.size/1024).toFixed(1)} KB</div>
+        </div>
+        <button class="btn" data-remove="${idx}">🗑️</button>
+      `;
+      fileList.appendChild(div);
+    });
+
+    fileList.querySelectorAll("[data-remove]").forEach(btn => {
+      btn.addEventListener("click", () => removeAt(Number(btn.getAttribute("data-remove"))));
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;");
+  }
+
+  // Drag & drop
+  ["dragenter","dragover"].forEach(ev => {
+    drop.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      drop.classList.add("dragover");
+    });
+  });
+  ["dragleave","drop"].forEach(ev => {
+    drop.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      drop.classList.remove("dragover");
+    });
+  });
+
+  drop.addEventListener("drop", (e) => {
+    const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+    addFiles(files);
+  });
+
+  // Paste Ctrl+V
+  window.addEventListener("paste", (e) => {
+    const items = e.clipboardData?.items ? Array.from(e.clipboardData.items) : [];
+    const imgs = [];
+    for(const it of items){
+      if(it.type && it.type.startsWith("image/")){
+        const f = it.getAsFile();
+        if(f) imgs.push(f);
+      }
+    }
+    if(imgs.length){
+      addFiles(imgs);
+    }
+  });
+
+  // Pick files
+  btnPick.addEventListener("click", () => filePicker.click());
+  filePicker.addEventListener("change", (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    addFiles(files);
+    filePicker.value = "";
+  });
+
+  // Validation triggers
+  category.addEventListener("change", validate);
+  title.addEventListener("input", validate);
+
+  btnClear.addEventListener("click", clearAll);
+
+  // Build ZIP
+  btnZip.addEventListener("click", async () => {
+    const cat = category.value;
+    const t = title.value.trim();
+    if(!cat || !t || state.files.length === 0) return;
+
+    const zip = new JSZip();
+    const slug = slugify(t);
+
+    // Load existing manifest if present in same origin (optional)
+    // If not found, start new
+    let existing = { items: [] };
+    try{
+      const res = await fetch("./" + MANIFEST_NAME, { cache: "no-store" });
+      if(res.ok){
+        existing = await res.json();
+        if(!Array.isArray(existing.items)) existing.items = [];
+      }
+    }catch(_){ /* ignore */ }
+
+    const tsBase = Date.now();
+    const newItems = [];
+
+    for(let i=0;i<state.files.length;i++){
+      const f = state.files[i].file;
+      const ext = extFromFile(f);
+      const ts = tsBase + i;
+      const newName = `${TODAY}__${slug}__${ts}.${ext}`;
+      const path = `${cat}/${newName}`;
+
+      zip.folder(cat).file(newName, f);
+
+      newItems.push({
+        category: cat,
+        title: t,
+        date: TODAY,
+        file: path
+      });
+    }
+
+    // merge manifest
+    const merged = {
+      items: [
+        ...existing.items.filter(Boolean),
+        ...newItems
+      ]
+    };
+
+    zip.file(MANIFEST_NAME, JSON.stringify(merged, null, 2));
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `upload_${TODAY}__${slug}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    alert(
+`ZIP sudah dibuat!
+
+Langkah berikutnya:
+1) Buka repo GitHub kamu
+2) Drag & drop ZIP ini ke repo, atau extract lalu commit folder kategori + gallery-manifest.json
+3) Setelah deploy GitHub Pages, gallery index.html akan otomatis tampil.`
+    );
+  });
+
+  renderList();
+  validate();
+})();
+</script>
+</body>
+</html>
