@@ -24,7 +24,6 @@
       --radius:16px;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
-
     *{ box-sizing:border-box; }
     body{
       margin:0;
@@ -32,18 +31,11 @@
                   radial-gradient(1000px 600px at 90% 30%, rgba(93,240,166,.12), transparent 55%),
                   var(--bg);
       color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       line-height:1.5;
     }
-
     a{ color:var(--accent); text-decoration:none; }
     a:hover{ text-decoration:underline; }
-
-    .container{
-      max-width:1200px;
-      margin:0 auto;
-      padding:24px;
-    }
 
     header{
       position: sticky;
@@ -53,7 +45,6 @@
       background: linear-gradient(to bottom, rgba(11,18,32,.92), rgba(11,18,32,.65));
       border-bottom:1px solid var(--line);
     }
-
     .header-inner{
       max-width:1200px;
       margin:0 auto;
@@ -63,22 +54,14 @@
       justify-content:space-between;
       gap:16px;
     }
-
     .brand{
       display:flex;
       flex-direction:column;
       gap:2px;
-      min-width:240px;
+      min-width:260px;
     }
-    .brand h1{
-      margin:0;
-      font-size:16px;
-      letter-spacing:.3px;
-    }
-    .brand .sub{
-      font-size:12px;
-      color:var(--muted);
-    }
+    .brand h1{ margin:0; font-size:16px; letter-spacing:.3px; }
+    .brand .sub{ font-size:12px; color:var(--muted); }
 
     .top-actions{
       display:flex;
@@ -87,7 +70,6 @@
       flex-wrap:wrap;
       justify-content:flex-end;
     }
-
     .btn{
       border:1px solid var(--line);
       background: rgba(255,255,255,.06);
@@ -103,12 +85,8 @@
       align-items:center;
       white-space:nowrap;
     }
-    .btn:hover{
-      background: rgba(255,255,255,.1);
-      border-color: rgba(255,255,255,.14);
-    }
+    .btn:hover{ background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.14); }
     .btn:active{ transform: translateY(1px); }
-
     .btn-primary{
       background: rgba(122,167,255,.18);
       border-color: rgba(122,167,255,.35);
@@ -118,15 +96,10 @@
       border-color: rgba(122,167,255,.5);
     }
 
-    .grid{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:16px;
-      margin-top:18px;
-    }
-    @media (max-width: 980px){
-      .grid{ grid-template-columns: 1fr; }
-      .brand{ min-width:unset; }
+    .container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:24px;
     }
 
     .card{
@@ -136,11 +109,7 @@
       box-shadow: var(--shadow);
       padding:16px;
     }
-    .card h2{
-      margin:0 0 10px;
-      font-size:14px;
-      letter-spacing:.2px;
-    }
+    .card h2{ margin:0 0 10px; font-size:14px; letter-spacing:.2px; }
     .muted{ color:var(--muted); }
 
     .controls{
@@ -154,13 +123,7 @@
       .controls{ grid-template-columns: 1fr 1fr; }
       .controls .full{ grid-column: 1 / -1; }
     }
-
-    label{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:6px;
-    }
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
     select, input[type="date"], input[type="text"]{
       width:100%;
       padding:10px 10px;
@@ -198,10 +161,11 @@
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap:16px;
+      margin-top:12px;
     }
-    @media (max-width: 980px){
-      .split{ grid-template-columns: 1fr; }
-    }
+    @media (max-width: 980px){ .split{ grid-template-columns: 1fr; } }
+
+    .mini{ font-size:12px; color:var(--muted); margin-top:6px; }
 
     table{
       width:100%;
@@ -225,25 +189,9 @@
       border-bottom:1px solid var(--line);
       font-size:13px;
     }
-    tbody tr:hover td{
-      background: rgba(255,255,255,.03);
-    }
-    .td-date{
-      white-space:nowrap;
-      font-family: var(--mono);
-      font-size:12px;
-      color:rgba(232,238,255,.92);
-    }
-    .tasks{
-      white-space:pre-wrap;
-      color:rgba(232,238,255,.9);
-    }
-
-    .mini{
-      font-size:12px;
-      color:var(--muted);
-      margin-top:6px;
-    }
+    tbody tr:hover td{ background: rgba(255,255,255,.03); }
+    .td-date{ white-space:nowrap; font-family: var(--mono); font-size:12px; }
+    .tasks{ white-space:pre-wrap; color:rgba(232,238,255,.9); }
 
     .status{
       display:flex;
@@ -254,20 +202,12 @@
       margin-top:8px;
     }
     .dot{
-      width:8px;
-      height:8px;
-      border-radius:50%;
+      width:8px; height:8px; border-radius:50%;
       background: var(--warn);
       box-shadow: 0 0 0 3px rgba(255,210,122,.12);
     }
-    .dot.ok{
-      background: var(--good);
-      box-shadow: 0 0 0 3px rgba(93,240,166,.12);
-    }
-    .dot.bad{
-      background: var(--bad);
-      box-shadow: 0 0 0 3px rgba(255,122,122,.12);
-    }
+    .dot.ok{ background: var(--good); box-shadow: 0 0 0 3px rgba(93,240,166,.12); }
+    .dot.bad{ background: var(--bad); box-shadow: 0 0 0 3px rgba(255,122,122,.12); }
 
     .footer{
       margin-top:18px;
@@ -277,26 +217,71 @@
       opacity:.9;
     }
 
-    .kbd{
-      font-family: var(--mono);
-      padding:2px 6px;
-      border-radius:8px;
+    /* Modal full-screen chart */
+    .modal{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.72);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      padding:18px;
+    }
+    .modal.open{ display:flex; }
+    .modal-card{
+      width:min(1100px, 98vw);
+      height:min(720px, 92vh);
+      background: linear-gradient(to bottom right, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border:1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding:14px;
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .modal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .modal-title{
+      font-weight:700;
+      font-size:14px;
+      letter-spacing:.2px;
+    }
+    .btn-close{
       border:1px solid var(--line);
       background: rgba(255,255,255,.06);
-      font-size:12px;
-      color:rgba(232,238,255,.9);
+      color:var(--text);
+      border-radius:12px;
+      padding:8px 10px;
+      cursor:pointer;
+      font-weight:700;
     }
+    .modal-body{
+      flex:1;
+      min-height:0;
+      background: rgba(0,0,0,.18);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px;
+    }
+    .modal-body canvas{ width:100% !important; height:100% !important; }
+    .clickable{ cursor: zoom-in; }
   </style>
 </head>
-<body>
 
+<body>
 <header>
   <div class="header-inner">
     <div class="brand">
       <h1>Display Laporan Kegiatan Harian</h1>
-      <div class="sub">
-        Sumber: Google Sheet (tab <span class="kbd">Kegiatan</span>) • Filter & grafik mingguan / bulanan / tahunan
-      </div>
+      <div class="sub">Sumber: Google Sheet (tab <b>Kegiatan</b>) • Filter & grafik mingguan / bulanan / tahunan</div>
     </div>
 
     <div class="top-actions">
@@ -308,104 +293,74 @@
 </header>
 
 <div class="container">
+  <div class="card">
+    <h2>Ringkasan & Grafik</h2>
 
-  <div class="grid">
-    <!-- Left: charts & table -->
-    <div class="card">
-      <h2>Ringkasan & Grafik</h2>
-
-      <div class="controls">
-        <div>
-          <label for="mode">Mode Grafik</label>
-          <select id="mode">
-            <option value="daily">Harian</option>
-            <option value="weekly" selected>Mingguan</option>
-            <option value="monthly">Bulanan</option>
-            <option value="yearly">Tahunan</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="dateFrom">Dari Tanggal</label>
-          <input id="dateFrom" type="date" />
-        </div>
-
-        <div>
-          <label for="dateTo">Sampai Tanggal</label>
-          <input id="dateTo" type="date" />
-        </div>
-
-        <div class="full">
-          <label for="search">Cari (di semua tugas)</label>
-          <input id="search" type="text" placeholder="contoh: pemasangan, cutting, plang..." />
-        </div>
-
-        <button class="btn btn-primary" id="btnApply">Terapkan</button>
+    <div class="controls">
+      <div>
+        <label for="mode">Mode Grafik</label>
+        <select id="mode">
+          <option value="daily">Harian</option>
+          <option value="weekly" selected>Mingguan</option>
+          <option value="monthly">Bulanan</option>
+          <option value="yearly">Tahunan</option>
+        </select>
       </div>
 
-      <div class="chips" id="chips"></div>
-
-      <div class="split" style="margin-top:12px;">
-        <div class="card" style="padding:12px;">
-          <h2 style="margin-bottom:6px;">Grafik Aktivitas (Total Task)</h2>
-          <div class="mini">Dihitung dari gabungan task Tim Lapangan + Tim Operator</div>
-          <canvas id="chartTrend" height="150"></canvas>
-        </div>
-
-        <div class="card" style="padding:12px;">
-          <h2 style="margin-bottom:6px;">Top Hari Tersibuk</h2>
-          <div class="mini">Urutan berdasarkan jumlah task gabungan</div>
-          <canvas id="chartTopBusy" height="150"></canvas>
-        </div>
+      <div>
+        <label for="dateFrom">Dari Tanggal</label>
+        <input id="dateFrom" type="date" />
       </div>
 
-      <div style="margin-top:14px;">
-        <h2>Daftar Laporan (Hasil Filter)</h2>
-        <div class="mini">Kolom: Tanggal (A), Tugas Tim Lapangan (B), Tugas Tim Operator (C)</div>
-        <table>
-          <thead>
-            <tr>
-              <th style="width:140px;">Tanggal</th>
-              <th>Tugas Tim Lapangan</th>
-              <th>Tugas Tim Operator</th>
-              <th style="width:110px;">Total Task</th>
-            </tr>
-          </thead>
-          <tbody id="tbody">
-            <tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>
-          </tbody>
-        </table>
+      <div>
+        <label for="dateTo">Sampai Tanggal</label>
+        <input id="dateTo" type="date" />
+      </div>
 
-        <div class="status">
-          <span class="dot" id="statusDot"></span>
-          <span id="statusText">Menyiapkan…</span>
-        </div>
+      <div class="full">
+        <label for="search">Cari (di semua tugas)</label>
+        <input id="search" type="text" placeholder="contoh: pemasangan, cutting, plang..." />
+      </div>
+
+      <button class="btn btn-primary" id="btnApply">Terapkan</button>
+    </div>
+
+    <div class="chips" id="chips"></div>
+
+    <div class="split">
+      <div class="card" style="padding:12px;">
+        <h2 style="margin-bottom:6px;">Grafik Aktivitas (Total Task)</h2>
+        <div class="mini">Klik grafik untuk mode layar penuh</div>
+        <canvas id="chartTrend" class="clickable" height="150"></canvas>
+      </div>
+
+      <div class="card" style="padding:12px;">
+        <h2 style="margin-bottom:6px;">Top Hari Tersibuk</h2>
+        <div class="mini">Urutan berdasarkan jumlah task gabungan</div>
+        <canvas id="chartTopBusy" class="clickable" height="150"></canvas>
       </div>
     </div>
 
-    <!-- Right: info -->
-    <div class="card">
-      <h2>Info</h2>
-      <div class="mini">
-        - Website ini menarik data langsung dari Google Spreadsheet yang dipublish.<br/>
-        - Password “Laporan Keuangan” dicek di sisi browser (client-side), jadi <b>ini bukan keamanan sungguhan</b> — hanya “gate” sederhana.<br/>
-        - Halaman keuangan akan dibuka ke <span class="kbd">./keuangan.html</span> jika password benar.
-      </div>
+    <div style="margin-top:14px;">
+      <h2>Daftar Laporan (Hasil Filter)</h2>
+      <div class="mini">Kolom: Tanggal (A4), Tugas Tim Lapangan (B4), Tugas Tim Operator (C4)</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:140px;">Tanggal</th>
+            <th>Tugas Tim Lapangan</th>
+            <th>Tugas Tim Operator</th>
+            <th style="width:110px;">Total Task</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>
+        </tbody>
+      </table>
 
-      <div style="margin-top:14px;">
-        <h2>Tips</h2>
-        <ul class="mini" style="margin:8px 0 0 18px; padding:0;">
-          <li>Gunakan mode <b>Mingguan</b> untuk melihat retensi/tren kerja per minggu.</li>
-          <li>Isi <b>Dari/Sampai</b> untuk membatasi periode.</li>
-          <li>Pencarian akan memfilter baris yang mengandung kata kunci pada tugas lapangan/operator.</li>
-        </ul>
-      </div>
-
-      <div style="margin-top:14px;">
-        <h2>Debug</h2>
-        <div class="mini" style="margin-bottom:8px;">Jika data tidak muncul, biasanya karena nama sheet tidak cocok.</div>
-        <div class="chip">Sheet key: <b id="sheetKey">-</b></div>
-        <div class="chip">Tab dicoba: <b>Kegiatan</b> → <b>Sheet1</b> → default</div>
+      <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Menyiapkan…</span>
       </div>
     </div>
   </div>
@@ -415,448 +370,493 @@
   </div>
 </div>
 
+<!-- MODAL FULLSCREEN -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">Grafik</div>
+      <button class="btn-close" id="modalClose">✕ Close</button>
+    </div>
+    <div class="modal-body">
+      <canvas id="modalCanvas"></canvas>
+    </div>
+  </div>
+</div>
+
 <script>
-  /***********************
-   * CONFIG
-   ***********************/
-  const PUBLISHED_HTML_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtAXhDpGqAuq5YjCpovQDg5SftjAGYllHqQ4F-VvxKWxzgxSDpxuqRGEC6xlgS57unBdJ2PsZnvlx5/pubhtml";
+/***********************
+ * CONFIG
+ ***********************/
+const PUBLISHED_HTML_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtAXhDpGqAuq5YjCpovQDg5SftjAGYllHqQ4F-VvxKWxzgxSDpxuqRGEC6xlgS57unBdJ2PsZnvlx5/pubhtml";
 
-  // Nama tab yang ingin dibaca:
-  const SHEET_CANDIDATES = ["Kegiatan", "Sheet1", "sheet1"];
+const TARGET_SHEET_NAME = "Kegiatan";      // tab yang dipakai untuk laporan harian
+const KEUANGAN_PASSWORD = "AdvertisingJaya";
 
-  // Password untuk menu keuangan:
-  const KEUANGAN_PASSWORD = "AdvertisingJaya";
+/***********************
+ * STATE
+ ***********************/
+let RAW_ROWS = [];          // {date, lapangan, operator, total}
+let chartTrend, chartTop;
+let modalChart;
 
-  /***********************
-   * HELPERS
-   ***********************/
-  function setStatus(type, text){
-    const dot = document.getElementById("statusDot");
-    dot.classList.remove("ok","bad");
-    if(type === "ok") dot.classList.add("ok");
-    if(type === "bad") dot.classList.add("bad");
-    document.getElementById("statusText").textContent = text;
+/***********************
+ * UI HELPERS
+ ***********************/
+function setStatus(type, text){
+  const dot = document.getElementById("statusDot");
+  dot.classList.remove("ok","bad");
+  if(type === "ok") dot.classList.add("ok");
+  if(type === "bad") dot.classList.add("bad");
+  document.getElementById("statusText").textContent = text;
+}
+function escapeHtml(str){
+  return String(str ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+/***********************
+ * PARSE TASKS
+ ***********************/
+function countTasks(text){
+  if(!text) return 0;
+  const lines = String(text)
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  // hitung bullet "-" sebagai task
+  const bullet = lines.filter(l => l.startsWith("-")).length;
+  if(bullet > 0) return bullet;
+
+  // fallback: per baris
+  if(lines.length === 1 && lines[0].includes(" - ")){
+    return lines[0].split(" - ").map(s=>s.trim()).filter(Boolean).length;
+  }
+  return lines.length;
+}
+
+/***********************
+ * DATE HELPERS (UTC)
+ ***********************/
+function toDateFlexible(v){
+  if(!v) return null;
+
+  // try: 2026-01-27 or 1/27/2026 etc.
+  const d = new Date(v);
+  if(!isNaN(d.getTime())){
+    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   }
 
-  function parseSheetKey(pubhtmlUrl){
-    // Ambil bagian setelah /d/e/ ... /pubhtml
-    const m = pubhtmlUrl.match(/\/d\/e\/([^/]+)\//);
-    return m ? m[1] : null;
+  // try: dd/mm/yyyy
+  const m = String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m){
+    const mm = Number(m[1]), dd = Number(m[2]), yy = Number(m[3]);
+    const d2 = new Date(Date.UTC(yy, mm-1, dd));
+    if(!isNaN(d2.getTime())) return d2;
   }
+  return null;
+}
+function fmtDateUTC(d){
+  if(!d) return "-";
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth()+1).padStart(2,"0");
+  const day = String(d.getUTCDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function within(d, from, to){
+  if(!d) return false;
+  const t = d.getTime();
+  if(from && t < from.getTime()) return false;
+  if(to && t > to.getTime()) return false;
+  return true;
+}
+function isoWeekKey(d){
+  // ISO week in UTC
+  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2,"0")}`;
+}
+function monthKey(d){
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`;
+}
+function yearKey(d){ return String(d.getUTCFullYear()); }
 
-  function gvizUrl(sheetKey, sheetName){
-    // Google Visualization endpoint untuk spreadsheet "published"
-    // NOTE: untuk published link /d/e/<key>/..., pola ini umumnya tetap bekerja.
-    const base = `https://docs.google.com/spreadsheets/d/e/${sheetKey}/gviz/tq`;
-    const params = new URLSearchParams();
-    params.set("tqx", "out:json");
-    if(sheetName) params.set("sheet", sheetName);
-    return `${base}?${params.toString()}`;
-  }
+/***********************
+ * GOOGLE PUBLISHED HTML PARSER (NO GVIZ)
+ * - Ambil pubhtml, cari gid untuk tab "Kegiatan"
+ * - Fetch pubhtml?gid=...&single=true
+ * - Parse table "waffle", cari header "Tanggal" dll, ambil 3 kolom
+ ***********************/
+async function fetchPublishedHtml(url){
+  const res = await fetch(url, { cache:"no-store" });
+  const text = await res.text();
+  return text;
+}
 
-  function parseGvizJson(text){
-    // Response gviz biasanya: google.visualization.Query.setResponse({...});
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if(start === -1 || end === -1) throw new Error("Format GViz tidak dikenali");
-    const jsonStr = text.slice(start, end + 1);
-    return JSON.parse(jsonStr);
-  }
+function parseGidFromPubhtml(html, sheetName){
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  // Biasanya tab ada di link yang mengandung "gid="
+  const links = [...doc.querySelectorAll('a[href*="gid="]')];
+  const hit = links.find(a => a.textContent.trim().toLowerCase() === sheetName.trim().toLowerCase());
+  if(!hit) return null;
+  const href = hit.getAttribute("href") || "";
+  const m = href.match(/gid=(\d+)/);
+  return m ? m[1] : null;
+}
 
-  function toDate(val){
-    // GViz date bisa berbentuk:
-    // - string "2026-01-27"
-    // - string "Date(2026,0,27)"
-    // - object {v: "Date(....)"}
-    if(val == null) return null;
-    let v = val;
-    if(typeof v === "object" && v.v != null) v = v.v;
+function extractRowsFromSingleSheetHtml(html){
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const table = doc.querySelector("table.waffle");
+  if(!table) throw new Error("Table sheet tidak ditemukan (table.waffle)");
 
-    if(typeof v === "string"){
-      // Date(YYYY,MM,DD)
-      const m = v.match(/Date\((\d+),(\d+),(\d+)\)/);
-      if(m){
-        const y = Number(m[1]);
-        const mo = Number(m[2]); // 0-based
-        const d = Number(m[3]);
-        return new Date(Date.UTC(y, mo, d));
-      }
-      // ISO or other date string
-      const d = new Date(v);
-      if(!isNaN(d.getTime())) return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const trs = [...table.querySelectorAll("tr")];
+  // Convert to 2D text array
+  const grid = trs.map(tr => [...tr.querySelectorAll("td,th")].map(td => td.textContent.trim()));
+
+  // cari baris header yang ada "Tanggal" dan "Tugas" (lapangan/operator)
+  let headerRow = -1;
+  for(let i=0;i<grid.length;i++){
+    const row = grid[i].map(x=>String(x||"").toLowerCase());
+    const hasTanggal = row.some(c => c === "tanggal" || c.includes("tanggal"));
+    const hasLap = row.some(c => c.includes("tugas tim lapangan"));
+    const hasOp  = row.some(c => c.includes("tugas tim operator"));
+    if(hasTanggal && (hasLap || hasOp)){
+      headerRow = i;
+      break;
     }
-
-    // number? (timestamp)
-    if(typeof v === "number"){
-      const d = new Date(v);
-      if(!isNaN(d.getTime())) return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    }
-    return null;
+  }
+  if(headerRow === -1){
+    // fallback: asumsi A3/B3/C3 header seperti gambar
+    headerRow = 2;
   }
 
-  function fmtDateUTC(d){
-    if(!d) return "-";
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth()+1).padStart(2,"0");
-    const day = String(d.getUTCDate()).padStart(2,"0");
-    return `${y}-${m}-${day}`;
+  // cari index kolom untuk 3 header
+  const header = grid[headerRow].map(x=>String(x||"").toLowerCase());
+  let idxTanggal = header.findIndex(c => c.includes("tanggal"));
+  let idxLap = header.findIndex(c => c.includes("tugas tim lapangan"));
+  let idxOp  = header.findIndex(c => c.includes("tugas tim operator"));
+
+  // fallback: A,B,C
+  if(idxTanggal < 0) idxTanggal = 0;
+  if(idxLap < 0) idxLap = 1;
+  if(idxOp < 0) idxOp = 2;
+
+  // data mulai setelah header
+  const out = [];
+  for(let i=headerRow+1; i<grid.length; i++){
+    const row = grid[i];
+    const tanggalStr = row[idxTanggal] ?? "";
+    const lap = row[idxLap] ?? "";
+    const op  = row[idxOp] ?? "";
+
+    // stop kalau baris kosong total
+    if(!tanggalStr && !lap && !op) continue;
+
+    const date = toDateFlexible(tanggalStr);
+    // kalau tanggal tidak kebaca tapi ada text, tetap masuk (biar kelihatan)
+    const total = countTasks(lap) + countTasks(op);
+    out.push({ date, lapangan: lap, operator: op, total, tanggalRaw: tanggalStr });
   }
 
-  function countTasks(text){
-    // Dari contoh: "- item\n- item"
-    if(!text) return 0;
-    const lines = String(text)
-      .split(/\r?\n/)
-      .map(s => s.trim())
-      .filter(Boolean);
+  // filter yang benar-benar punya sesuatu
+  return out.filter(r => (r.tanggalRaw || r.lapangan || r.operator));
+}
 
-    // Hitung bullet "-" sebagai task, kalau tidak ada "-" tetap hitung per baris
-    let bulletCount = lines.filter(l => l.startsWith("-")).length;
-    if(bulletCount > 0) return bulletCount;
+async function loadRowsFromGoogleSheet(){
+  // 1) fetch main pubhtml untuk dapat gid tab "Kegiatan"
+  const mainHtml = await fetchPublishedHtml(PUBLISHED_HTML_URL);
+  let gid = parseGidFromPubhtml(mainHtml, TARGET_SHEET_NAME);
 
-    // Kalau user menulis dipisah dengan "-" dalam satu baris, coba pecah
-    if(lines.length === 1 && lines[0].includes(" - ")){
-      return lines[0].split(" - ").map(s => s.trim()).filter(Boolean).length;
-    }
-    return lines.length;
+  // fallback: kalau tidak ketemu, coba gid=0 (umumnya sheet pertama)
+  if(!gid) gid = "0";
+
+  // 2) fetch single sheet HTML
+  const singleUrl = `${PUBLISHED_HTML_URL}?gid=${encodeURIComponent(gid)}&single=true`;
+  const singleHtml = await fetchPublishedHtml(singleUrl);
+
+  const rows = extractRowsFromSingleSheetHtml(singleHtml);
+
+  // urutkan berdasarkan date kalau ada
+  rows.sort((a,b)=>{
+    const ta = a.date ? a.date.getTime() : -Infinity;
+    const tb = b.date ? b.date.getTime() : -Infinity;
+    return ta - tb;
+  });
+
+  return rows;
+}
+
+/***********************
+ * RENDER
+ ***********************/
+function renderChips(filtered){
+  const chips = document.getElementById("chips");
+  const totalRows = filtered.length;
+  const totalTasks = filtered.reduce((s,r)=> s + (r.total || 0), 0);
+  const avgTasks = totalRows ? (totalTasks / totalRows) : 0;
+
+  let busiest = null;
+  for(const r of filtered){
+    if(!busiest || (r.total||0) > (busiest.total||0)) busiest = r;
   }
 
-  function safeText(v){
-    return (v == null) ? "" : String(v);
+  const busiestLabel = busiest
+    ? (busiest.date ? fmtDateUTC(busiest.date) : (busiest.tanggalRaw || "-"))
+    : "-";
+
+  chips.innerHTML = `
+    <div class="chip">Baris tampil: <b>${totalRows}</b></div>
+    <div class="chip">Total task: <b>${totalTasks}</b></div>
+    <div class="chip">Rata-rata task/hari: <b>${avgTasks.toFixed(2)}</b></div>
+    <div class="chip">Hari tersibuk: <b>${busiestLabel}</b> (<b>${busiest ? busiest.total : 0}</b>)</div>
+  `;
+}
+
+function renderTable(filtered){
+  const tbody = document.getElementById("tbody");
+  if(filtered.length === 0){
+    tbody.innerHTML = `<tr><td colspan="4" class="muted" style="padding:14px;">Tidak ada data sesuai filter.</td></tr>`;
+    return;
   }
 
-  function startOfISOWeekUTC(d){
-    // Monday-based ISO week
-    const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-    const day = date.getUTCDay(); // 0 Sun..6 Sat
-    const diff = (day === 0 ? -6 : 1 - day); // move to Monday
-    date.setUTCDate(date.getUTCDate() + diff);
-    return date;
-  }
+  const sorted = filtered.slice().sort((a,b)=>{
+    const ta = a.date ? a.date.getTime() : -Infinity;
+    const tb = b.date ? b.date.getTime() : -Infinity;
+    return tb - ta; // terbaru dulu
+  });
 
-  function isoWeekKey(d){
-    // returns YYYY-Www using UTC
-    const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-    // ISO week algorithm
-    const thursday = new Date(date);
-    thursday.setUTCDate(date.getUTCDate() + (4 - (date.getUTCDay() || 7)));
-    const yearStart = new Date(Date.UTC(thursday.getUTCFullYear(),0,1));
-    const weekNo = Math.ceil((((thursday - yearStart) / 86400000) + 1) / 7);
-    const yyyy = thursday.getUTCFullYear();
-    return `${yyyy}-W${String(weekNo).padStart(2,"0")}`;
-  }
-
-  function monthKey(d){
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`;
-  }
-
-  function yearKey(d){
-    return String(d.getUTCFullYear());
-  }
-
-  function within(d, from, to){
-    if(!d) return false;
-    const t = d.getTime();
-    if(from && t < from.getTime()) return false;
-    if(to && t > to.getTime()) return false;
-    return true;
-  }
-
-  /***********************
-   * DATA LOAD
-   ***********************/
-  let RAW_ROWS = []; // {date, lapangan, operator, total}
-  let chartTrend, chartTop;
-
-  async function fetchSheetRows(){
-    const key = parseSheetKey(PUBLISHED_HTML_URL);
-    if(!key) throw new Error("Sheet key tidak ditemukan dari URL pubhtml");
-    document.getElementById("sheetKey").textContent = key;
-
-    // Try candidate sheet names, then fallback without sheet param
-    const tries = [...SHEET_CANDIDATES, null];
-
-    let lastErr = null;
-    for(const name of tries){
-      try{
-        const url = gvizUrl(key, name);
-        const res = await fetch(url, { cache: "no-store" });
-        const text = await res.text();
-        const data = parseGvizJson(text);
-
-        if(!data.table || !data.table.rows) throw new Error("Table kosong");
-        const rows = data.table.rows;
-
-        // Expect columns: A Tanggal, B Lapangan, C Operator
-        const out = [];
-        for(const r of rows){
-          const c = r.c || [];
-          const d = toDate(c[0]);
-          const lap = safeText(c[1]?.v ?? c[1]);
-          const op  = safeText(c[2]?.v ?? c[2]);
-          if(!d && !lap && !op) continue;
-
-          const total = countTasks(lap) + countTasks(op);
-          out.push({ date: d, lapangan: lap, operator: op, total });
-        }
-
-        // if it looks valid, return
-        if(out.length > 0){
-          setStatus("ok", `Berhasil memuat ${out.length} baris dari sheet: ${name ?? "(default)"}`);
-          return out.sort((a,b)=> (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0));
-        } else {
-          throw new Error("Tidak ada baris terdeteksi");
-        }
-      }catch(e){
-        lastErr = e;
-      }
-    }
-    throw lastErr || new Error("Gagal memuat data");
-  }
-
-  /***********************
-   * RENDER
-   ***********************/
-  function renderChips(filtered){
-    const chips = document.getElementById("chips");
-    const totalRows = filtered.length;
-    const totalTasks = filtered.reduce((s,r)=> s + (r.total || 0), 0);
-    const avgTasks = totalRows ? (totalTasks / totalRows) : 0;
-
-    // tersibuk (1 hari)
-    let busiest = null;
-    for(const r of filtered){
-      if(!busiest || (r.total||0) > (busiest.total||0)) busiest = r;
-    }
-
-    chips.innerHTML = `
-      <div class="chip">Baris tampil: <b>${totalRows}</b></div>
-      <div class="chip">Total task: <b>${totalTasks}</b></div>
-      <div class="chip">Rata-rata task/hari: <b>${avgTasks.toFixed(2)}</b></div>
-      <div class="chip">Hari tersibuk: <b>${busiest ? fmtDateUTC(busiest.date) : "-"}</b> (<b>${busiest ? busiest.total : 0}</b>)</div>
+  tbody.innerHTML = sorted.map(r => {
+    const dateLabel = r.date ? fmtDateUTC(r.date) : (r.tanggalRaw || "-");
+    return `
+      <tr>
+        <td class="td-date">${escapeHtml(dateLabel)}</td>
+        <td class="tasks">${escapeHtml(r.lapangan)}</td>
+        <td class="tasks">${escapeHtml(r.operator)}</td>
+        <td class="td-date">${r.total ?? 0}</td>
+      </tr>
     `;
-  }
+  }).join("");
+}
 
-  function renderTable(filtered){
-    const tbody = document.getElementById("tbody");
-    if(filtered.length === 0){
-      tbody.innerHTML = `<tr><td colspan="4" class="muted" style="padding:14px;">Tidak ada data sesuai filter.</td></tr>`;
-      return;
+function aggregateForTrend(rows, mode){
+  const map = new Map();
+  for(const r of rows){
+    if(!r.date) continue; // untuk trend butuh tanggal valid
+    let key;
+    if(mode === "daily") key = fmtDateUTC(r.date);
+    else if(mode === "weekly") key = isoWeekKey(r.date);
+    else if(mode === "monthly") key = monthKey(r.date);
+    else if(mode === "yearly") key = yearKey(r.date);
+    else key = fmtDateUTC(r.date);
+
+    map.set(key, (map.get(key) || 0) + (r.total || 0));
+  }
+  const labels = Array.from(map.keys()).sort();
+  return { labels, values: labels.map(l => map.get(l)) };
+}
+
+function topBusyDays(rows, topN=10){
+  const daily = new Map();
+  for(const r of rows){
+    if(!r.date) continue; // top busy by tanggal valid
+    const k = fmtDateUTC(r.date);
+    daily.set(k, (daily.get(k) || 0) + (r.total || 0));
+  }
+  const pairs = Array.from(daily.entries())
+    .map(([k,v])=>({k,v}))
+    .sort((a,b)=> b.v - a.v)
+    .slice(0, topN);
+
+  return { labels: pairs.map(p=>p.k), values: pairs.map(p=>p.v) };
+}
+
+function renderCharts(filtered){
+  const mode = document.getElementById("mode").value;
+
+  // NOTE: Grafik hanya pakai baris yang tanggalnya valid
+  const chartable = filtered.filter(r => r.date);
+
+  // Trend
+  const trend = aggregateForTrend(chartable, mode);
+  if(chartTrend) chartTrend.destroy();
+  chartTrend = new Chart(document.getElementById("chartTrend"), {
+    type: "line",
+    data: { labels: trend.labels, datasets: [{ label: "Total Task", data: trend.values, tension: 0.25 }] },
+    options: {
+      responsive:true,
+      plugins:{ legend:{display:true}, tooltip:{enabled:true} },
+      scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true } }
     }
+  });
 
-    tbody.innerHTML = filtered
-      .slice() // copy
-      .sort((a,b)=> (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0)) // terbaru dulu
-      .map(r => `
-        <tr>
-          <td class="td-date">${fmtDateUTC(r.date)}</td>
-          <td class="tasks">${escapeHtml(r.lapangan)}</td>
-          <td class="tasks">${escapeHtml(r.operator)}</td>
-          <td class="td-date">${r.total ?? 0}</td>
-        </tr>
-      `).join("");
-  }
-
-  function escapeHtml(str){
-    return String(str ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;");
-  }
-
-  function aggregateForTrend(rows, mode){
-    // returns {labels:[], values:[]}
-    const map = new Map();
-
-    for(const r of rows){
-      if(!r.date) continue;
-      let key;
-      if(mode === "daily") key = fmtDateUTC(r.date);
-      else if(mode === "weekly") key = isoWeekKey(r.date);
-      else if(mode === "monthly") key = monthKey(r.date);
-      else if(mode === "yearly") key = yearKey(r.date);
-      else key = fmtDateUTC(r.date);
-
-      map.set(key, (map.get(key) || 0) + (r.total || 0));
+  // Top busy
+  const top = topBusyDays(chartable, 10);
+  if(chartTop) chartTop.destroy();
+  chartTop = new Chart(document.getElementById("chartTopBusy"), {
+    type: "bar",
+    data: { labels: top.labels, datasets: [{ label: "Total Task", data: top.values }] },
+    options: {
+      responsive:true,
+      plugins:{ legend:{display:true}, tooltip:{enabled:true} },
+      scales:{ x:{ ticks:{ maxRotation:60, autoSkip:false } }, y:{ beginAtZero:true } }
     }
+  });
+}
 
-    const labels = Array.from(map.keys()).sort();
-    const values = labels.map(l => map.get(l));
-    return { labels, values };
-  }
+/***********************
+ * FILTER
+ ***********************/
+function applyFilters(){
+  const mode = document.getElementById("mode").value;
+  const fromVal = document.getElementById("dateFrom").value;
+  const toVal = document.getElementById("dateTo").value;
+  const q = document.getElementById("search").value.trim().toLowerCase();
 
-  function topBusyDays(rows, topN=10){
-    const daily = new Map();
-    for(const r of rows){
-      if(!r.date) continue;
-      const k = fmtDateUTC(r.date);
-      daily.set(k, (daily.get(k) || 0) + (r.total || 0));
+  const from = fromVal ? new Date(fromVal + "T00:00:00Z") : null;
+  const to   = toVal ? new Date(toVal + "T00:00:00Z") : null;
+
+  const filtered = RAW_ROWS.filter(r => {
+    if(r.date && !within(r.date, from, to)) return false;
+    if(q){
+      const hay = (String(r.lapangan||"") + "\n" + String(r.operator||"")).toLowerCase();
+      if(!hay.includes(q)) return false;
     }
-    const pairs = Array.from(daily.entries())
-      .map(([k,v])=>({k,v}))
-      .sort((a,b)=> b.v - a.v)
-      .slice(0, topN);
+    // jika user set range tapi baris tanpa tanggal => disembunyikan (biar tidak nyasar)
+    if((from || to) && !r.date) return false;
+    return true;
+  });
 
-    return {
-      labels: pairs.map(p => p.k),
-      values: pairs.map(p => p.v)
-    };
+  renderChips(filtered);
+  renderCharts(filtered);
+  renderTable(filtered);
+
+  const modeName = ({daily:"Harian", weekly:"Mingguan", monthly:"Bulanan", yearly:"Tahunan"})[mode] || mode;
+  setStatus("ok", `Tampil: ${filtered.length} baris • Mode grafik: ${modeName}`);
+}
+
+function setDefaultDateRange(){
+  const dated = RAW_ROWS.filter(r => r.date);
+  if(!dated.length) return;
+
+  const first = dated[0].date;
+  const last  = dated[dated.length-1].date;
+
+  // default: 60 hari terakhir
+  const from60 = new Date(last.getTime() - 59 * 86400000);
+  const from = (from60.getTime() > first.getTime()) ? from60 : first;
+
+  document.getElementById("dateFrom").value = fmtDateUTC(from);
+  document.getElementById("dateTo").value   = fmtDateUTC(last);
+}
+
+/***********************
+ * MODAL FULLSCREEN CHART
+ ***********************/
+function openModalChart(title, srcChart){
+  const modal = document.getElementById("modal");
+  document.getElementById("modalTitle").textContent = title;
+
+  // clone config from existing chart
+  const cfg = {
+    type: srcChart.config.type,
+    data: JSON.parse(JSON.stringify(srcChart.data)),
+    options: JSON.parse(JSON.stringify(srcChart.options))
+  };
+  // make it a bit roomier
+  cfg.options.maintainAspectRatio = false;
+
+  if(modalChart) modalChart.destroy();
+  modal.classList.add("open");
+  modalChart = new Chart(document.getElementById("modalCanvas"), cfg);
+}
+
+function closeModal(){
+  const modal = document.getElementById("modal");
+  modal.classList.remove("open");
+  if(modalChart){ modalChart.destroy(); modalChart = null; }
+}
+
+/***********************
+ * LOAD
+ ***********************/
+async function loadAll(){
+  try{
+    setStatus("", "Memuat data dari Google Sheet…");
+    document.getElementById("tbody").innerHTML =
+      `<tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>`;
+
+    RAW_ROWS = await loadRowsFromGoogleSheet();
+    if(!RAW_ROWS.length) throw new Error("Data kosong / tidak terbaca dari sheet.");
+
+    setDefaultDateRange();
+    applyFilters();
+    setStatus("ok", `Berhasil memuat ${RAW_ROWS.length} baris dari tab "${TARGET_SHEET_NAME}".`);
+  }catch(e){
+    console.error(e);
+    setStatus("bad", `Gagal memuat data: ${e.message || String(e)}`);
+    document.getElementById("tbody").innerHTML =
+      `<tr><td colspan="4" class="muted" style="padding:14px;">Gagal memuat data: ${escapeHtml(e.message || String(e))}</td></tr>`;
   }
+}
 
-  function renderCharts(filtered){
-    const mode = document.getElementById("mode").value;
+/***********************
+ * EVENTS
+ ***********************/
+function setupEvents(){
+  document.getElementById("btnApply").addEventListener("click", applyFilters);
+  document.getElementById("mode").addEventListener("change", applyFilters);
+  document.getElementById("dateFrom").addEventListener("change", applyFilters);
+  document.getElementById("dateTo").addEventListener("change", applyFilters);
 
-    // Trend chart
-    const trend = aggregateForTrend(filtered, mode);
+  document.getElementById("search").addEventListener("input", () => {
+    clearTimeout(window.__t);
+    window.__t = setTimeout(applyFilters, 180);
+  });
 
-    if(chartTrend) chartTrend.destroy();
-    chartTrend = new Chart(document.getElementById("chartTrend"), {
-      type: "line",
-      data: {
-        labels: trend.labels,
-        datasets: [{
-          label: "Total Task",
-          data: trend.values,
-          tension: 0.25
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: true },
-          tooltip: { enabled: true }
-        },
-        scales: {
-          x: { ticks: { maxRotation: 0, autoSkip: true } },
-          y: { beginAtZero: true }
-        }
-      }
-    });
+  document.getElementById("btnRefresh").addEventListener("click", loadAll);
 
-    // Top busy days chart
-    const top = topBusyDays(filtered, 10);
-    if(chartTop) chartTop.destroy();
-    chartTop = new Chart(document.getElementById("chartTopBusy"), {
-      type: "bar",
-      data: {
-        labels: top.labels,
-        datasets: [{
-          label: "Total Task",
-          data: top.values
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: true },
-          tooltip: { enabled: true }
-        },
-        scales: {
-          x: { ticks: { maxRotation: 60, autoSkip: false } },
-          y: { beginAtZero: true }
-        }
-      }
-    });
-  }
-
-  function applyFilters(){
-    const mode = document.getElementById("mode").value;
-    const fromVal = document.getElementById("dateFrom").value;
-    const toVal = document.getElementById("dateTo").value;
-    const q = document.getElementById("search").value.trim().toLowerCase();
-
-    const from = fromVal ? new Date(fromVal + "T00:00:00Z") : null;
-    const to = toVal ? new Date(toVal + "T00:00:00Z") : null;
-
-    const filtered = RAW_ROWS.filter(r => {
-      if(r.date && !within(r.date, from, to)) return false;
-      if(q){
-        const hay = (r.lapangan + "\n" + r.operator).toLowerCase();
-        if(!hay.includes(q)) return false;
-      }
-      return true;
-    });
-
-    renderChips(filtered);
-    renderCharts(filtered);
-    renderTable(filtered);
-
-    // Status hint by mode
-    const modeName = ({daily:"Harian", weekly:"Mingguan", monthly:"Bulanan", yearly:"Tahunan"})[mode] || mode;
-    setStatus("ok", `Tampil: ${filtered.length} baris • Mode grafik: ${modeName}`);
-  }
-
-  function setDefaultDateRange(){
-    if(!RAW_ROWS.length) return;
-    const first = RAW_ROWS.find(r => r.date)?.date;
-    const last = [...RAW_ROWS].reverse().find(r => r.date)?.date;
-    if(!first || !last) return;
-
-    // Default: 60 hari terakhir kalau memungkinkan
-    const lastTime = last.getTime();
-    const from60 = new Date(lastTime - 59 * 86400000);
-    const from = (from60.getTime() > first.getTime()) ? from60 : first;
-
-    document.getElementById("dateFrom").value = fmtDateUTC(from);
-    document.getElementById("dateTo").value = fmtDateUTC(last);
-  }
-
-  /***********************
-   * ACTIONS
-   ***********************/
-  async function loadAll(){
-    try{
-      setStatus("", "Memuat data dari Google Sheet…");
-      document.getElementById("tbody").innerHTML = `<tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>`;
-
-      RAW_ROWS = await fetchSheetRows();
-
-      // Default date range & render
-      setDefaultDateRange();
-      applyFilters();
-    }catch(e){
-      console.error(e);
-      setStatus("bad", "Gagal memuat data. Cek apakah sheet sudah dipublish & nama tab benar (Kegiatan).");
-      document.getElementById("tbody").innerHTML = `<tr><td colspan="4" class="muted" style="padding:14px;">Gagal memuat data: ${escapeHtml(e.message || String(e))}</td></tr>`;
+  document.getElementById("btnKeuangan").addEventListener("click", () => {
+    const pwd = prompt("Masukkan password untuk membuka Laporan Keuangan:");
+    if(pwd === null) return;
+    if(pwd === KEUANGAN_PASSWORD){
+      window.location.href = "./keuangan.html";
+    }else{
+      alert("Password salah.");
     }
-  }
+  });
 
-  function setupEvents(){
-    document.getElementById("btnApply").addEventListener("click", applyFilters);
-    document.getElementById("mode").addEventListener("change", applyFilters);
-    document.getElementById("dateFrom").addEventListener("change", applyFilters);
-    document.getElementById("dateTo").addEventListener("change", applyFilters);
-    document.getElementById("search").addEventListener("input", () => {
-      // debounce ringan
-      clearTimeout(window.__t);
-      window.__t = setTimeout(applyFilters, 180);
-    });
+  document.getElementById("btnSource").href = PUBLISHED_HTML_URL;
 
-    document.getElementById("btnRefresh").addEventListener("click", loadAll);
+  // Modal close
+  document.getElementById("modalClose").addEventListener("click", closeModal);
+  document.getElementById("modal").addEventListener("click", (e) => {
+    if(e.target.id === "modal") closeModal();
+  });
+  window.addEventListener("keydown", (e) => {
+    if(e.key === "Escape") closeModal();
+  });
 
-    document.getElementById("btnKeuangan").addEventListener("click", () => {
-      const pwd = prompt("Masukkan password untuk membuka Laporan Keuangan:");
-      if(pwd === null) return; // cancel
-      if(pwd === KEUANGAN_PASSWORD){
-        // buka page baru (keuangan.html)
-        window.location.href = "./keuangan.html";
-      }else{
-        alert("Password salah.");
-      }
-    });
+  // Click charts to fullscreen
+  document.getElementById("chartTrend").addEventListener("click", () => {
+    if(chartTrend) openModalChart("Grafik Aktivitas (Total Task)", chartTrend);
+  });
+  document.getElementById("chartTopBusy").addEventListener("click", () => {
+    if(chartTop) openModalChart("Top Hari Tersibuk", chartTop);
+  });
+}
 
-    // Link source
-    const btnSource = document.getElementById("btnSource");
-    btnSource.href = PUBLISHED_HTML_URL;
-  }
-
-  /***********************
-   * INIT
-   ***********************/
-  document.getElementById("year").textContent = new Date().getFullYear();
-  setupEvents();
-  loadAll();
+/***********************
+ * INIT
+ ***********************/
+document.getElementById("year").textContent = new Date().getFullYear();
+setupEvents();
+loadAll();
 </script>
-
 </body>
 </html>
