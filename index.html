@@ -1,268 +1,407 @@
-/* index.js
-   Gallery display for GitHub Pages (static).
-   It scans folder categories (lowercase) and reads an optional manifest:
-   - ./gallery-manifest.json  (recommended)
-   If manifest not found, it will show an empty state + instructions.
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Galeri Pemasangan - Advertising Jaya</title>
 
-   Expected file structure:
-   /neonbox/...
-   /plang/...
-   /huruf timbul/  <-- (NOT allowed; use huruf-timbul or huruf_timbul?) 
-   IMPORTANT: you requested folder name lower-case; to be filesystem-safe on web
-   we use:
-     neonbox
-     plang
-     huruf-timbul
-     cutting-akrilik
-     jasa-pasang-sticker
-
-   Create / update gallery-manifest.json whenever you add images.
-*/
-
-(() => {
-  const CATEGORIES = [
-    { key: "neonbox", label: "Neonbox" },
-    { key: "plang", label: "Plang" },
-    { key: "huruf-timbul", label: "Huruf Timbul" },
-    { key: "cutting-akrilik", label: "Cutting Akrilik" },
-    { key: "jasa-pasang-sticker", label: "Jasa Pasang Sticker" },
-  ];
-
-  const MANIFEST_URL = "./gallery-manifest.json"; // you keep this in repo root
-  const DEFAULT_CATEGORY = "all";
-
-  const $ = (sel) => document.querySelector(sel);
-
-  function el(tag, attrs = {}, children = []) {
-    const n = document.createElement(tag);
-    for (const [k, v] of Object.entries(attrs)) {
-      if (k === "class") n.className = v;
-      else if (k === "html") n.innerHTML = v;
-      else if (k.startsWith("on") && typeof v === "function") n.addEventListener(k.slice(2), v);
-      else n.setAttribute(k, String(v));
+  <style>
+    :root{
+      --bg:#0b1220;
+      --text:#e8eeff;
+      --muted:#9fb0d0;
+      --line:rgba(255,255,255,.10);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
-    for (const c of children) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
-    return n;
-  }
-
-  function escapeHtml(s) {
-    return String(s ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;");
-  }
-
-  async function fetchJson(url) {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-    return await res.json();
-  }
-
-  function normalizeManifestItems(manifest) {
-    // Manifest format:
-    // {
-    //   "items":[
-    //     {
-    //       "category":"neonbox",
-    //       "title":"Judul",
-    //       "date":"2026-01-27",
-    //       "file":"neonbox/2026-01-27_judul_slug.jpg"
-    //     }, ...
-    //   ]
-    // }
-    const items = Array.isArray(manifest?.items) ? manifest.items : [];
-    return items
-      .map((it) => ({
-        category: String(it.category || "").toLowerCase(),
-        title: String(it.title || "Tanpa Judul"),
-        date: String(it.date || ""),
-        file: String(it.file || ""),
-      }))
-      .filter((it) => it.category && it.file);
-  }
-
-  function buildUI() {
-    // minimal injection into existing index.html
-    // required containers in index.html:
-    // #categorySelect, #searchInput, #galleryGrid, #countText, #emptyState, #modal, #modalImg, #modalTitle, #modalMeta, #btnDownload, #btnClose
-    const catSel = $("#categorySelect");
-    if (catSel) {
-      catSel.innerHTML = "";
-      catSel.appendChild(el("option", { value: DEFAULT_CATEGORY }, ["Semua Kategori"]));
-      for (const c of CATEGORIES) catSel.appendChild(el("option", { value: c.key }, [c.label]));
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:
+        radial-gradient(1200px 700px at 20% 0%, rgba(122,167,255,.16), transparent 60%),
+        radial-gradient(1000px 600px at 90% 30%, rgba(93,240,166,.12), transparent 55%),
+        var(--bg);
+      line-height:1.5;
     }
-  }
+    a{ color: inherit; text-decoration:none; }
+    a:hover{ text-decoration:underline; }
 
-  function filterItems(items, category, q) {
-    const qq = (q || "").trim().toLowerCase();
-    return items.filter((it) => {
-      if (category && category !== DEFAULT_CATEGORY && it.category !== category) return false;
-      if (qq) {
-        const hay = `${it.title} ${it.category} ${it.date} ${it.file}`.toLowerCase();
-        if (!hay.includes(qq)) return false;
-      }
-      return true;
-    });
-  }
+    header{
+      position: sticky;
+      top:0;
+      z-index:20;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(to bottom, rgba(11,18,32,.92), rgba(11,18,32,.70));
+      border-bottom:1px solid var(--line);
+    }
+    .header-inner{
+      max-width:1200px;
+      margin:0 auto;
+      padding:14px 24px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .brand h1{ margin:0; font-size:16px; letter-spacing:.3px; }
+    .brand .sub{ font-size:12px; color:var(--muted); margin-top:2px; }
 
-  function renderGallery(items) {
-    const grid = $("#galleryGrid");
-    const count = $("#countText");
-    const empty = $("#emptyState");
-
-    if (!grid) return;
-
-    grid.innerHTML = "";
-
-    if (!items.length) {
-      if (count) count.textContent = "0 item";
-      if (empty) empty.style.display = "block";
-      return;
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:13px;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      white-space:nowrap;
+    }
+    .btn:hover{ background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.18); }
+    .btn-primary{
+      background: rgba(122,167,255,.18);
+      border-color: rgba(122,167,255,.35);
     }
 
-    if (empty) empty.style.display = "none";
-    if (count) count.textContent = `${items.length} item`;
+    .container{ max-width:1200px; margin:0 auto; padding:24px; }
 
-    // newest first by date (fallback: file)
-    const sorted = items.slice().sort((a, b) => {
-      const da = a.date || "";
-      const db = b.date || "";
-      if (da !== db) return db.localeCompare(da);
-      return (b.file || "").localeCompare(a.file || "");
-    });
-
-    for (const it of sorted) {
-      const card = el("div", { class: "g-card", tabindex: "0" });
-
-      const thumb = el("img", {
-        class: "g-thumb",
-        src: `./${it.file}`,
-        alt: it.title,
-        loading: "lazy",
-      });
-
-      const meta = el("div", { class: "g-meta" }, [
-        el("div", { class: "g-badges" }, [
-          el("span", { class: "badge" }, [categoryLabel(it.category)]),
-          it.date ? el("span", { class: "badge badge-muted" }, [it.date]) : el("span"),
-        ]),
-        el("div", { class: "g-title" }, [it.title]),
-      ]);
-
-      card.appendChild(thumb);
-      card.appendChild(meta);
-
-      card.addEventListener("click", () => openModal(it));
-      card.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openModal(it);
-        }
-      });
-
-      grid.appendChild(card);
+    .hero{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(to bottom right, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      padding:18px;
     }
-  }
+    .hero-title{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+    .hero h2{ margin:0; font-size:20px; }
+    .hero p{ margin:8px 0 0; color:var(--muted); font-size:13px; max-width:850px; }
+    .hero-actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 
-  function categoryLabel(key) {
-    return (CATEGORIES.find((c) => c.key === key)?.label) || key;
-  }
-
-  function openModal(item) {
-    const modal = $("#modal");
-    const img = $("#modalImg");
-    const title = $("#modalTitle");
-    const meta = $("#modalMeta");
-    const btnDl = $("#btnDownload");
-
-    if (!modal || !img) return;
-
-    img.src = `./${item.file}`;
-    img.alt = item.title;
-    if (title) title.textContent = item.title;
-    if (meta) meta.innerHTML = `
-      <span class="badge">${escapeHtml(categoryLabel(item.category))}</span>
-      ${item.date ? `<span class="badge badge-muted">${escapeHtml(item.date)}</span>` : ""}
-    `;
-
-    if (btnDl) {
-      btnDl.setAttribute("href", `./${item.file}`);
-      btnDl.setAttribute("download", item.file.split("/").pop() || "download");
+    .panel{
+      margin-top:14px;
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(to bottom right, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      box-shadow: var(--shadow);
+      padding:16px;
+    }
+    .controls{
+      display:grid;
+      grid-template-columns: 220px 1fr auto;
+      gap:10px;
+      align-items:center;
+    }
+    @media (max-width: 860px){
+      .controls{ grid-template-columns: 1fr; }
+    }
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    select, input[type="text"]{
+      width:100%;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+    }
+    select:focus, input:focus{
+      border-color: rgba(122,167,255,.55);
+      box-shadow: 0 0 0 3px rgba(122,167,255,.15);
     }
 
-    modal.classList.add("open");
-    document.body.style.overflow = "hidden";
-  }
-
-  function closeModal() {
-    const modal = $("#modal");
-    if (!modal) return;
-    modal.classList.remove("open");
-    document.body.style.overflow = "";
-  }
-
-  function wireModal() {
-    const modal = $("#modal");
-    const btnClose = $("#btnClose");
-
-    if (btnClose) btnClose.addEventListener("click", closeModal);
-
-    if (modal) {
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeModal();
-      });
+    .topline{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .muted{ color:var(--muted); }
+    .pill{
+      font-family: var(--mono);
+      font-size:12px;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color: rgba(232,238,255,.92);
     }
 
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
-    });
-  }
+    /* Gallery cards */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:12px;
+      margin-top:12px;
+    }
+    @media (max-width: 1100px){ .grid{ grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 800px){ .grid{ grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px){ .grid{ grid-template-columns: 1fr; } }
 
-  async function main() {
-    buildUI();
-    wireModal();
-
-    const catSel = $("#categorySelect");
-    const search = $("#searchInput");
-
-    let allItems = [];
-    try {
-      const manifest = await fetchJson(MANIFEST_URL);
-      allItems = normalizeManifestItems(manifest);
-
-      $("#manifestHint") && ( $("#manifestHint").style.display = "none" );
-    } catch (e) {
-      // no manifest, show hint
-      const hint = $("#manifestHint");
-      if (hint) {
-        hint.style.display = "block";
-        hint.innerHTML = `
-          <div class="hint">
-            <b>Manifest tidak ditemukan:</b> <code>${MANIFEST_URL}</code><br/>
-            Agar gallery bisa tampil otomatis di GitHub Pages (static), buat file <code>gallery-manifest.json</code> berisi daftar gambar.<br/>
-            Kamu bisa generate dari <b>updoc.html</b> (akan dibuatkan paket ZIP yang sudah termasuk <code>gallery-manifest.json</code>).
-          </div>
-        `;
-      }
-      allItems = [];
+    .g-card{
+      border:1px solid var(--line);
+      border-radius: 16px;
+      overflow:hidden;
+      background: rgba(0,0,0,.12);
+      cursor:pointer;
+      transition: transform .08s ease, background .2s ease, border-color .2s ease;
+      box-shadow: 0 8px 22px rgba(0,0,0,.25);
+    }
+    .g-card:hover{
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,.18);
+      background: rgba(255,255,255,.04);
+    }
+    .g-thumb{
+      width:100%;
+      height:190px;
+      object-fit:cover;
+      display:block;
+      background: rgba(255,255,255,.03);
+    }
+    .g-meta{
+      padding:10px 10px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .g-badges{ display:flex; gap:6px; flex-wrap:wrap; }
+    .badge{
+      font-size:11px;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color: rgba(232,238,255,.92);
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .badge-muted{
+      color: var(--muted);
+      border-color: rgba(255,255,255,.08);
+      background: rgba(0,0,0,.18);
+      font-weight:700;
+    }
+    .g-title{
+      font-weight:900;
+      font-size:13px;
+      line-height:1.25;
+      /* judul boleh tampil (sesuai request: nama file tidak tampil, tapi judul oke) */
     }
 
-    function rerender() {
-      const category = catSel ? catSel.value : DEFAULT_CATEGORY;
-      const q = search ? search.value : "";
-      const filtered = filterItems(allItems, category, q);
-      renderGallery(filtered);
+    /* Empty state */
+    #emptyState{
+      display:none;
+      margin-top:12px;
+      border:1px dashed rgba(255,255,255,.16);
+      border-radius: 16px;
+      padding:14px;
+      color: var(--muted);
+      background: rgba(0,0,0,.12);
+    }
+    .hint{
+      margin-top:12px;
+      padding:12px;
+      border-left:3px solid rgba(255,210,122,.8);
+      background: rgba(0,0,0,.12);
+      border-radius: 14px;
+      color: var(--muted);
+      font-size:12px;
+    }
+    code{
+      font-family: var(--mono);
+      background: rgba(255,255,255,.06);
+      padding:2px 6px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,.10);
+      color: rgba(232,238,255,.92);
     }
 
-    if (catSel) catSel.addEventListener("change", rerender);
-    if (search) search.addEventListener("input", () => {
-      clearTimeout(window.__qT);
-      window.__qT = setTimeout(rerender, 150);
-    });
+    /* Modal */
+    .modal{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.78);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      padding:18px;
+    }
+    .modal.open{ display:flex; }
+    .modal-card{
+      width:min(1100px, 98vw);
+      height:min(760px, 92vh);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(to bottom right, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .modal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.15);
+    }
+    .modal-head-left{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+    .modal-title{
+      font-weight:900;
+      font-size:14px;
+      letter-spacing:.2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 70vw;
+    }
+    .modal-actions{ display:flex; gap:10px; align-items:center; }
+    .modal-body{
+      flex:1;
+      min-height:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:12px;
+      background: rgba(0,0,0,.18);
+    }
+    .modal-body img{
+      max-width:100%;
+      max-height:100%;
+      object-fit:contain;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .btn-close{
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius:12px;
+      padding:9px 12px;
+      cursor:pointer;
+      font-weight:900;
+    }
 
-    rerender();
-  }
+    footer{
+      margin:18px 0 0;
+      text-align:center;
+      color:var(--muted);
+      font-size:12px;
+      opacity:.9;
+    }
+  </style>
+</head>
 
-  document.addEventListener("DOMContentLoaded", main);
-})();
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <h1>Advertising Jaya • Galeri Pemasangan</h1>
+      <div class="sub">Dokumentasi pemasangan — klik gambar untuk popup + download</div>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a class="btn" href="./updoc.html">⬆️ Upload (updoc)</a>
+      <a class="btn btn-primary" href="./">🏠 Home</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <section class="hero">
+    <div class="hero-title">
+      <div>
+        <h2>Landing Page Galeri</h2>
+        <p>
+          Semua foto pemasangan ditampilkan dalam bentuk galeri. Nama file <b>tidak ditampilkan</b>.
+          Untuk melihat detail, klik gambar — akan muncul popup dengan tombol <b>Download</b> & <b>Close</b>.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="./updoc.html">📦 Upload Dokumentasi</a>
+        <a class="btn" href="./gallery-manifest.json" target="_blank" rel="noreferrer">🧾 Manifest</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="controls">
+      <div>
+        <label for="categorySelect">Filter Kategori</label>
+        <select id="categorySelect"></select>
+      </div>
+      <div>
+        <label for="searchInput">Cari Judul</label>
+        <input id="searchInput" type="text" placeholder="contoh: pemasangan, pelabuhan, neonbox..." />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <div class="topline">
+          <span class="pill" id="countText">0 item</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="manifestHint" style="display:none;"></div>
+
+    <div id="emptyState">
+      Belum ada gambar yang bisa ditampilkan.  
+      Pastikan kamu sudah menambahkan folder kategori dan file <code>gallery-manifest.json</code>.
+    </div>
+
+    <div id="galleryGrid" class="grid"></div>
+  </section>
+
+  <footer>© <span id="year"></span> • Gallery</footer>
+</div>
+
+<!-- MODAL (popup saat klik gambar) -->
+<div id="modal" class="modal" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <div id="modalTitle" class="modal-title">Judul</div>
+        <div id="modalMeta"></div>
+      </div>
+      <div class="modal-actions">
+        <a id="btnDownload" class="btn btn-primary" href="#" download>⬇️ Download</a>
+        <button id="btnClose" class="btn-close">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <img id="modalImg" alt="preview" />
+    </div>
+  </div>
+</div>
+
+<!-- PENTING: jangan paste isi index.js ke HTML.
+     Cukup panggil file JS dengan src seperti ini: -->
+<script src="./index.js"></script>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
