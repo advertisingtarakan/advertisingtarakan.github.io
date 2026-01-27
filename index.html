@@ -1,13 +1,14 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dokumentasi Pemasangan</title>
 
 <style>
 :root{
-  --bg:#05070c;
+  --bg:#06080f;
+  --panel:#0c1120;
   --text:#eef2ff;
   --muted:#9aa4c7;
   --line:rgba(255,255,255,.08);
@@ -18,65 +19,120 @@ body{
   margin:0;
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
   background:
-    radial-gradient(1200px 600px at 20% 0%, rgba(109,169,255,.15), transparent 60%),
+    radial-gradient(1200px 600px at 20% 0%, rgba(109,169,255,.18), transparent 60%),
     radial-gradient(900px 500px at 80% 20%, rgba(87,255,193,.12), transparent 60%),
     var(--bg);
   color:var(--text);
 }
 
-/* ===== LANDING ===== */
+/* ===== SECTION GENERIC ===== */
+section{
+  padding:80px 20px;
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+}
+
+/* ===== HERO ===== */
 .hero{
   min-height:100vh;
   display:flex;
   align-items:center;
-  justify-content:center;
-  text-align:center;
-  padding:40px 20px;
-}
-.hero-inner{
-  max-width:900px;
 }
 .hero h1{
-  font-size:clamp(28px,5vw,56px);
-  line-height:1.1;
+  font-size:clamp(34px,5vw,62px);
+  line-height:1.05;
   margin:0 0 20px;
-  letter-spacing:.5px;
 }
 .hero p{
-  font-size:clamp(14px,2.2vw,18px);
+  max-width:720px;
+  font-size:clamp(15px,2vw,19px);
   color:var(--muted);
   line-height:1.7;
-  margin:0 auto;
-  max-width:700px;
 }
-.scroll-hint{
-  margin-top:50px;
+.hero .tagline{
+  margin-top:40px;
+  letter-spacing:3px;
   font-size:12px;
   color:var(--muted);
-  letter-spacing:2px;
   opacity:.7;
   animation:blink 1.8s infinite;
 }
-@keyframes blink{
-  0%,100%{opacity:.3}
-  50%{opacity:1}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+
+/* ===== STATS ===== */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:20px;
+}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:26px;
+  text-align:center;
+}
+.stat b{
+  display:block;
+  font-size:36px;
+}
+.stat span{
+  font-size:13px;
+  color:var(--muted);
+}
+
+/* ===== SERVICES ===== */
+.services{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:16px;
+}
+@media(max-width:1000px){.services{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.services{grid-template-columns:repeat(2,1fr)}}
+.service{
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:20px;
+  background:rgba(0,0,0,.35);
+}
+.service h4{
+  margin:0 0 8px;
+}
+.service p{
+  margin:0;
+  font-size:13px;
+  color:var(--muted);
+}
+
+/* ===== PROCESS ===== */
+.process{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:18px;
+}
+@media(max-width:900px){.process{grid-template-columns:repeat(2,1fr)}}
+.step{
+  border-left:3px solid var(--accent);
+  padding-left:14px;
+}
+.step h4{margin:0 0 6px}
+.step p{
+  margin:0;
+  font-size:13px;
+  color:var(--muted);
 }
 
 /* ===== GALLERY ===== */
-.section{
-  padding:60px 20px;
-  max-width:1200px;
-  margin:auto;
-}
 .controls{
   display:grid;
   grid-template-columns:220px 1fr auto;
   gap:10px;
-  margin-bottom:14px;
+  margin-bottom:16px;
 }
-@media(max-width:800px){
-  .controls{grid-template-columns:1fr}
-}
+@media(max-width:800px){.controls{grid-template-columns:1fr}}
 select,input{
   width:100%;
   padding:10px;
@@ -100,23 +156,18 @@ select,input{
   overflow:hidden;
   background:rgba(0,0,0,.35);
   cursor:pointer;
-  transition:.2s;
 }
-.card:hover{transform:translateY(-3px)}
 .card img{
   width:100%;
   height:190px;
   object-fit:cover;
 }
-.meta{
-  padding:10px;
-}
+.meta{padding:10px}
 .badge{
   font-size:11px;
   padding:2px 8px;
   border-radius:999px;
   border:1px solid var(--line);
-  display:inline-block;
   margin-right:6px;
 }
 .title{
@@ -129,7 +180,7 @@ select,input{
 .modal{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.85);
+  background:rgba(0,0,0,.88);
   display:none;
   align-items:center;
   justify-content:center;
@@ -137,9 +188,9 @@ select,input{
 }
 .modal.open{display:flex}
 .modal-inner{
-  position:relative;
   width:95vw;
   height:90vh;
+  position:relative;
   overflow:hidden;
 }
 .modal img{
@@ -148,18 +199,16 @@ select,input{
   left:50%;
   transform:translate(-50%,-50%) scale(1);
   transform-origin:center;
-  max-width:none;
   cursor:grab;
 }
 .modal button{
   position:absolute;
-  top:14px;
-  right:14px;
-  z-index:10;
+  top:16px;
+  right:16px;
   padding:8px 12px;
   border-radius:10px;
   border:1px solid var(--line);
-  background:rgba(0,0,0,.5);
+  background:rgba(0,0,0,.6);
   color:#fff;
   font-weight:700;
   cursor:pointer;
@@ -169,80 +218,91 @@ select,input{
 
 <body>
 
-<!-- LANDING -->
+<!-- HERO -->
 <section class="hero">
-  <div class="hero-inner">
-    <h1>Dokumentasi Pemasangan<br>Visual & Lapangan</h1>
+  <div class="container">
+    <h1>Dokumentasi Pemasangan<br>Lapangan & Visual</h1>
     <p>
-      Halaman ini menampilkan hasil pekerjaan pemasangan secara visual,
-      sebagai dokumentasi aktivitas lapangan yang tersusun rapi,
-      mudah ditelusuri, dan siap ditampilkan kapan saja.
+      Halaman ini berfungsi sebagai pusat dokumentasi kegiatan pemasangan,
+      menampilkan hasil kerja lapangan secara visual, terstruktur,
+      dan mudah ditelusuri untuk kebutuhan evaluasi, presentasi, maupun arsip.
     </p>
-    <div class="scroll-hint">SCROLL ↓</div>
+    <div class="tagline">SCROLL TO EXPLORE ↓</div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section>
+  <div class="container stats">
+    <div class="stat"><b>1.200+</b><span>Pemasangan</span></div>
+    <div class="stat"><b>5</b><span>Kategori Layanan</span></div>
+    <div class="stat"><b>24/7</b><span>Dokumentasi Aktif</span></div>
+    <div class="stat"><b>100%</b><span>Visual Lapangan</span></div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section>
+  <div class="container services">
+    <div class="service"><h4>Neonbox</h4><p>Instalasi media promosi visual dengan pencahayaan.</p></div>
+    <div class="service"><h4>Plang</h4><p>Pemasangan papan informasi & branding.</p></div>
+    <div class="service"><h4>Huruf Timbul</h4><p>Instalasi lettering 3D profesional.</p></div>
+    <div class="service"><h4>Cutting Akrilik</h4><p>Produksi & pemasangan material akrilik.</p></div>
+    <div class="service"><h4>Sticker</h4><p>Pemasangan sticker branding & informasi.</p></div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section>
+  <div class="container process">
+    <div class="step"><h4>Perencanaan</h4><p>Analisa lokasi & kebutuhan pemasangan.</p></div>
+    <div class="step"><h4>Produksi</h4><p>Pembuatan material sesuai spesifikasi.</p></div>
+    <div class="step"><h4>Pemasangan</h4><p>Eksekusi lapangan oleh tim teknis.</p></div>
+    <div class="step"><h4>Dokumentasi</h4><p>Pengambilan visual sebagai arsip & laporan.</p></div>
   </div>
 </section>
 
 <!-- GALLERY -->
-<section class="section">
-  <div class="controls">
-    <select id="category"></select>
-    <input id="search" placeholder="Cari judul dokumentasi..." />
-    <div id="count" style="align-self:center;font-size:12px;color:var(--muted)">0 item</div>
+<section>
+  <div class="container">
+    <div class="controls">
+      <select id="cat"></select>
+      <input id="search" placeholder="Cari dokumentasi...">
+      <div id="count" style="align-self:center;font-size:12px;color:var(--muted)">0 item</div>
+    </div>
+    <div id="grid" class="grid"></div>
   </div>
-  <div id="grid" class="grid"></div>
 </section>
 
 <!-- MODAL -->
 <div id="modal" class="modal">
   <div class="modal-inner">
-    <button id="close">✕</button>
-    <img id="modalImg" />
+    <button onclick="closeModal()">✕</button>
+    <img id="modalImg">
   </div>
 </div>
 
 <script>
-/* ===== DATA ===== */
-const CATEGORIES=[
-  {key:"neonbox",label:"Neonbox"},
-  {key:"plang",label:"Plang"},
-  {key:"huruf-timbul",label:"Huruf Timbul"},
-  {key:"cutting-akrilik",label:"Cutting Akrilik"},
-  {key:"jasa-pasang-sticker",label:"Jasa Pasang Sticker"}
-];
-const MANIFEST="./gallery-manifest.json";
-
-/* ===== INIT ===== */
-const catSel=document.getElementById("category");
-catSel.innerHTML='<option value="all">Semua Kategori</option>'+
-  CATEGORIES.map(c=>`<option value="${c.key}">${c.label}</option>`).join("");
+const CATS=["neonbox","plang","huruf-timbul","cutting-akrilik","jasa-pasang-sticker"];
+const catSel=document.getElementById("cat");
+catSel.innerHTML='<option value="all">Semua Kategori</option>'+CATS.map(c=>`<option>${c}</option>`).join("");
 
 let DATA=[];
-fetch(MANIFEST).then(r=>r.json()).then(j=>{
-  DATA=j.items||[];
-  render();
-});
+fetch("./gallery-manifest.json").then(r=>r.json()).then(j=>{DATA=j.items||[];render();});
 
-/* ===== RENDER ===== */
 function render(){
-  const q=document.getElementById("search").value.toLowerCase();
+  const q=search.value.toLowerCase();
   const c=catSel.value;
-  const grid=document.getElementById("grid");
   grid.innerHTML="";
-  const f=DATA.filter(i=>
-    (c==="all"||i.category===c) &&
-    i.title.toLowerCase().includes(q)
-  );
-  document.getElementById("count").textContent=f.length+" item";
+  const f=DATA.filter(i=>(c==="all"||i.category===c)&&i.title.toLowerCase().includes(q));
+  count.textContent=f.length+" item";
   f.forEach(i=>{
     const d=document.createElement("div");
     d.className="card";
-    d.innerHTML=`
-      <img src="./${i.file}">
-      <div class="meta">
-        <span class="badge">${i.category}</span>
-        <span class="badge">${i.date}</span>
-        <div class="title">${i.title}</div>
-      </div>`;
+    d.innerHTML=`<img src="./${i.file}"><div class="meta">
+      <span class="badge">${i.category}</span>
+      <span class="badge">${i.date}</span>
+      <div class="title">${i.title}</div></div>`;
     d.onclick=()=>openModal(i.file);
     grid.appendChild(d);
   });
@@ -250,55 +310,22 @@ function render(){
 catSel.onchange=render;
 search.oninput=render;
 
-/* ===== MODAL ZOOM ===== */
-const modal=document.getElementById("modal");
-const img=document.getElementById("modalImg");
-let scale=1,dx=0,dy=0,isDrag=false,sx=0,sy=0;
-
+/* ZOOM */
+let scale=1,dx=0,dy=0,drag=false,sx,sy;
 function openModal(src){
   modal.classList.add("open");
-  img.src="./"+src;
-  resetZoom();
+  modalImg.src="./"+src;
+  scale=1;dx=0;dy=0;apply();
 }
-function closeModal(){
-  modal.classList.remove("open");
-}
-document.getElementById("close").onclick=closeModal;
-modal.onclick=e=>{if(e.target===modal)closeModal()};
-
-function resetZoom(){
-  scale=1;dx=0;dy=0;
-  apply();
-}
+function closeModal(){modal.classList.remove("open")}
 function apply(){
-  img.style.transform=
-    `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(${scale})`;
+  modalImg.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(${scale})`;
 }
-
-/* zoom wheel */
-img.onwheel=e=>{
-  e.preventDefault();
-  scale+=e.deltaY*-0.001;
-  scale=Math.min(Math.max(0.5,scale),5);
-  apply();
-};
-
-/* drag */
-img.onmousedown=e=>{
-  isDrag=true;sx=e.clientX;sy=e.clientY;
-  img.style.cursor="grabbing";
-};
-window.onmouseup=()=>{isDrag=false;img.style.cursor="grab"};
-window.onmousemove=e=>{
-  if(!isDrag)return;
-  dx+=e.clientX-sx;
-  dy+=e.clientY-sy;
-  sx=e.clientX;sy=e.clientY;
-  apply();
-};
-
-/* double click reset */
-img.ondblclick=resetZoom;
+modalImg.onwheel=e=>{e.preventDefault();scale+=e.deltaY*-0.001;scale=Math.max(.5,Math.min(5,scale));apply()};
+modalImg.onmousedown=e=>{drag=true;sx=e.clientX;sy=e.clientY};
+window.onmouseup=()=>drag=false;
+window.onmousemove=e=>{if(!drag)return;dx+=e.clientX-sx;dy+=e.clientY-sy;sx=e.clientX;sy=e.clientY;apply()};
+modalImg.ondblclick=()=>{scale=1;dx=dy=0;apply()};
 </script>
 
 </body>
