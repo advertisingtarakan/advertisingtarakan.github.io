@@ -98,8 +98,8 @@ pre{
 <label>Kategori</label>
 <select id="category"></select>
 
-<label>Judul Pekerjaan</label>
-<input id="title" placeholder="Contoh: Neonbox Mini">
+<label>Judul / Nama Pekerjaan</label>
+<input id="title" placeholder="Contoh: RS UKT">
 
 <button id="uploadBtn" disabled>🚀 Upload ke GitHub</button>
 </div>
@@ -125,8 +125,8 @@ const GITHUB = {
 /* ================= KATEGORI ================= */
 const CATEGORIES = [
   "neonbox",
-  "plang",
   "huruf-timbul",
+  "plang",
   "spanduk",
   "banner",
   "stiker",
@@ -139,6 +139,7 @@ const CATEGORIES = [
   "display",
   "letter-sign",
   "kaca-film",
+  "jasa-pasang-sticker",
   "lainnya"
 ];
 
@@ -157,17 +158,16 @@ const b64 = f => new Promise(r=>{
 });
 
 /* ================= INIT ================= */
-function initCategories(){
+(function initCategories(){
   const sel = $("category");
   sel.innerHTML = `<option value="">-- pilih kategori --</option>`;
-  for(const c of CATEGORIES){
-    const o = document.createElement("option");
-    o.value = c;
-    o.textContent = c.replace(/-/g," ").toUpperCase();
+  CATEGORIES.forEach(c=>{
+    const o=document.createElement("option");
+    o.value=c;
+    o.textContent=c.replace(/-/g," ").toUpperCase();
     sel.appendChild(o);
-  }
-}
-initCategories();
+  });
+})();
 
 /* ================= GITHUB API ================= */
 async function ghPut(path, body){
@@ -187,12 +187,21 @@ async function ghPut(path, body){
   return res.json();
 }
 
+async function ghGet(path){
+  const token = $("token").value.trim();
+  const res = await fetch(
+    `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${path}`,
+    { headers:{ Authorization:`token ${token}` } }
+  );
+  if(!res.ok) return null;
+  return res.json();
+}
+
 /* ================= FILE HANDLING ================= */
 function addFiles(files){
-  for(const f of files){
-    if(!f.type.startsWith("image/")) continue;
-    state.files.push(f);
-  }
+  [...files].forEach(f=>{
+    if(f.type.startsWith("image/")) state.files.push(f);
+  });
   render();
 }
 
@@ -254,20 +263,31 @@ $("category").onchange =
 $("title").oninput =
 $("token").oninput = validate;
 
-/* ================= UPLOAD ================= */
+/* ================= UPLOAD + MANIFEST ================= */
 $("uploadBtn").onclick = async ()=>{
   log("Mulai upload...");
+
   const cat = $("category").value;
   const title = $("title").value;
+  const date = today();
 
-  let i = 0;
+  let manifest = { items: [] };
+  let manifestSha = null;
+
+  const mf = await ghGet("gallery-manifest.json");
+  if(mf){
+    manifestSha = mf.sha;
+    manifest = JSON.parse(atob(mf.content));
+  }
+
+  let i=0;
   for(const f of state.files){
     const ext = f.name.split(".").pop();
     const filename =
-      `${today()}__${slug(title)}__${Date.now()+i}.${ext}`;
+      `${date}__${slug(title)}__${Date.now()+i}.${ext}`;
     const path = `${cat}/${filename}`;
 
-    log("Upload: " + path);
+    log("Upload: "+path);
 
     await ghPut(path,{
       message:"upload via updoc",
@@ -275,11 +295,26 @@ $("uploadBtn").onclick = async ()=>{
       branch:GITHUB.branch
     });
 
+    // 👉 STRUKTUR SESUAI MANIFEST ASLI
+    manifest.items.push({
+      category: cat,
+      title: title,
+      date: date,
+      file: path
+    });
+
     i++;
   }
 
-  log("✅ Upload selesai");
-  alert("Upload berhasil");
+  await ghPut("gallery-manifest.json",{
+    message:"update gallery manifest",
+    content: btoa(JSON.stringify(manifest, null, 2)),
+    sha: manifestSha,
+    branch:GITHUB.branch
+  });
+
+  log("✅ Upload + manifest update selesai");
+  alert("Upload & manifest berhasil");
 
   state.files=[];
   render();
