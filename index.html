@@ -1518,7 +1518,7 @@ if(previewCard) boxObserver.observe(previewCard);
   const boxes = Array.from(document.querySelectorAll(".preview .box"));
   if (!preview || boxes.length === 0) return;
 
-  const STEP_DELAY = 540; // 3x lebih lambat dari 180ms
+  const STEP_DELAY = 250; // 3x lebih lambat dari 180ms
   let timers = [];
 
   function clearTimers() {
@@ -1557,6 +1557,7 @@ if(previewCard) boxObserver.observe(previewCard);
 
 </body>
 </html>
+
 
 
 
