@@ -610,19 +610,15 @@ select:focus,input:focus,textarea:focus{border-color:rgba(109,169,255,.55)}
   background:rgba(0,0,0,.4);
 }
 
-/* ===== FAQ ===== */
-.faq{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:14px;
-}
-@media(max-width:900px){.faq{grid-template-columns:1fr}}
+/* ===== FAQ (animated accordion) ===== */
 .qa{
   border:1px solid var(--line);
   border-radius:18px;
   background:rgba(0,0,0,.25);
   overflow:hidden;
 }
+
+/* tombol pertanyaan */
 .qa button{
   width:100%;
   text-align:left;
@@ -637,15 +633,46 @@ select:focus,input:focus,textarea:focus{border-color:rgba(109,169,255,.55)}
   gap:14px;
   font-weight:800;
 }
+
 .qa button span{color:rgba(255,255,255,.90)}
+
+/* ikon chevron + animasinya */
+.chev{
+  width:34px;height:34px;border-radius:14px;
+  border:1px solid var(--line);
+  display:grid;place-items:center;
+  color:rgba(255,255,255,.75);
+
+  transition: transform .8s;
+  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+.chev svg{width:18px;height:18px;opacity:.95}
+.qa.open .chev{transform:rotate(180deg)}
+
+/* konten jawaban (ANIMASI TINGGI) */
 .qa .a{
-  padding:0 14px 14px;
+  padding:0 14px;
   color:var(--muted);
   font-size:13px;
   line-height:1.7;
-  display:none;
+
+  max-height:0;          /* kunci: tertutup */
+  opacity:0;
+  overflow:hidden;
+
+  transition:
+    max-height .8s,
+    opacity .35s;
+  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
-.qa.open .a{display:block}
+
+/* saat terbuka */
+.qa.open .a{
+  padding:0 14px 14px;
+  max-height:260px;      /* naikkan kalau jawaban lebih panjang */
+  opacity:1;
+}
+
 .chev{
   width:34px;height:34px;border-radius:14px;
   border:1px solid var(--line);
@@ -1299,7 +1326,7 @@ document.querySelectorAll('.qa button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const card = btn.closest('.qa');
 
-    // tutup semua dulu
+    // tutup semua yang lain
     document.querySelectorAll('.qa.open').forEach(openCard=>{
       if(openCard !== card) openCard.classList.remove('open');
     });
@@ -1308,6 +1335,7 @@ document.querySelectorAll('.qa button').forEach(btn=>{
     card.classList.toggle('open');
   });
 });
+
 
 
 /* ===== GALLERY (keep JSON logic) ===== */
@@ -1567,6 +1595,7 @@ if(previewCard) boxObserver.observe(previewCard);
 
 </body>
 </html>
+
 
 
 
