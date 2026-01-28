@@ -2,164 +2,177 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<title>Updoc — GitHub Direct Uploader</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uploader Dokumentasi → GitHub</title>
 
 <style>
+:root{
+  --bg:#0b1220; --fg:#e8eeff; --muted:#9fb0d0; --line:#233;
+}
+*{box-sizing:border-box}
 body{
-  font-family:system-ui;
-  background:#0b1220;
-  color:#e8eeff;
-  margin:0;
-  padding:20px
+  margin:0; padding:24px;
+  background:var(--bg); color:var(--fg);
+  font-family:system-ui
 }
+.container{max-width:1100px;margin:auto}
 .card{
-  max-width:900px;
-  margin:auto;
-  background:#111a2e;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px;
+  background:#0f172a;
+  margin-bottom:16px
+}
+h1{margin:0 0 6px;font-size:20px}
+p{margin:0;color:var(--muted);font-size:13px}
+
+.drop{
+  border:2px dashed #334;
+  border-radius:16px;
   padding:20px;
-  border-radius:16px
+  min-height:220px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+  text-align:center
 }
-label{
-  display:block;
-  margin-top:10px;
-  font-size:13px;
-  opacity:.85
-}
+.drop.dragover{background:#13203a}
+
 input,select,button{
   width:100%;
   padding:10px;
-  margin-top:5px;
   border-radius:10px;
-  border:1px solid #333;
+  border:1px solid var(--line);
   background:#0b1220;
-  color:#fff
+  color:var(--fg)
 }
-button{
-  cursor:pointer;
-  font-weight:800;
-  margin-top:15px
-}
+button{cursor:pointer;font-weight:700}
 button:disabled{opacity:.5}
-.list{
-  display:flex;
-  flex-wrap:wrap;
+
+.list{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.item{
+  display:grid;
+  grid-template-columns:80px 1fr auto;
   gap:10px;
-  margin-top:15px
+  align-items:center;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:8px
 }
-.thumb{
-  width:90px;
-  height:70px;
-  object-fit:cover;
-  border-radius:8px;
-  border:1px solid #333
-}
+.thumb{width:80px;height:60px;object-fit:cover;border-radius:8px}
+
 pre{
   background:#050913;
   padding:10px;
   border-radius:10px;
-  max-height:200px;
+  max-height:220px;
   overflow:auto;
-  font-size:12px
-}
-.warn{
-  background:#1c243f;
-  border-left:4px solid #ffcc66;
-  padding:10px;
-  border-radius:10px;
-  margin-top:10px;
   font-size:12px
 }
 </style>
 </head>
 
 <body>
-<div class="card">
-<h2>Uploader Dokumentasi → GitHub</h2>
+<div class="container">
 
-<div class="warn">
-🔐 <b>Admin only</b> — Token tidak disimpan.  
-Masukkan GitHub Personal Access Token setiap kali upload.
+<div class="card">
+<h1>Uploader Dokumentasi</h1>
+<p>Drag & drop, paste <b>Ctrl + V</b>, atau pilih file → upload langsung ke GitHub</p>
 </div>
 
-<label>GitHub Token</label>
+<div class="card">
+<label>GitHub Token (Classic)</label>
 <input id="token" type="password" placeholder="ghp_..." />
+</div>
 
+<div class="card drop" id="drop">
+  🖼️ Drop / Paste gambar di sini
+  <input id="filePicker" type="file" accept="image/*" multiple hidden>
+  <button id="btnPick">📁 Pilih File</button>
+</div>
+
+<div class="card">
 <label>Kategori</label>
-<select id="category">
-  <option value="">-- pilih kategori --</option>
-  <option value="neonbox">Neonbox</option>
-  <option value="plang">Plang</option>
-  <option value="huruf-timbul">Huruf Timbul</option>
-</select>
+<select id="category"></select>
 
-<label>Judul</label>
-<input id="title" placeholder="Contoh: Pemasangan Neonbox Pelabuhan">
-
-<label>Pilih Gambar</label>
-<input id="files" type="file" multiple accept="image/*">
+<label>Judul Pekerjaan</label>
+<input id="title" placeholder="Contoh: Neonbox Mini">
 
 <button id="uploadBtn" disabled>🚀 Upload ke GitHub</button>
+</div>
 
-<div class="list" id="list"></div>
+<div class="card">
+<div id="fileList" class="list"></div>
+</div>
+
+<div class="card">
 <pre id="log"></pre>
 </div>
 
+</div>
+
 <script>
-/* =======================
-   KONFIGURASI REPO
-======================= */
+/* ================= CONFIG ================= */
 const GITHUB = {
   owner: "advertisingtarakan",
   repo: "advertisingtarakan.github.io",
   branch: "main"
 };
 
+/* ================= KATEGORI ================= */
+const CATEGORIES = [
+  "neonbox",
+  "plang",
+  "huruf-timbul",
+  "spanduk",
+  "banner",
+  "stiker",
+  "cutting-sticker",
+  "akrilik",
+  "backdrop",
+  "billboard",
+  "signage",
+  "papan-nama",
+  "display",
+  "letter-sign",
+  "kaca-film",
+  "lainnya"
+];
 
-/* =======================
-   ELEMENT
-======================= */
-const tokenEl = document.getElementById("token");
-const filesEl = document.getElementById("files");
-const listEl = document.getElementById("list");
-const uploadBtn = document.getElementById("uploadBtn");
-const logEl = document.getElementById("log");
-const catEl = document.getElementById("category");
-const titleEl = document.getElementById("title");
+/* ================= STATE ================= */
+const state = { files: [] };
 
-let files = [];
+/* ================= UTIL ================= */
+const $ = id => document.getElementById(id);
+const log = m => $("log").textContent += m + "\n";
+const today = () => new Date().toISOString().slice(0,10);
+const slug = s => s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-");
+const b64 = f => new Promise(r=>{
+  const fr=new FileReader();
+  fr.onload=()=>r(fr.result.split(",")[1]);
+  fr.readAsDataURL(f);
+});
 
-/* =======================
-   UTIL
-======================= */
-function log(msg){
-  logEl.textContent += msg + "\n";
+/* ================= INIT ================= */
+function initCategories(){
+  const sel = $("category");
+  sel.innerHTML = `<option value="">-- pilih kategori --</option>`;
+  for(const c of CATEGORIES){
+    const o = document.createElement("option");
+    o.value = c;
+    o.textContent = c.replace(/-/g," ").toUpperCase();
+    sel.appendChild(o);
+  }
 }
-function slugify(s){
-  return s.toLowerCase().trim()
-    .replace(/[^a-z0-9]+/g,"-")
-    .replace(/^-|-$/g,"");
-}
-function today(){
-  const d=new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-function fileToBase64(file){
-  return new Promise(res=>{
-    const r=new FileReader();
-    r.onload=()=>res(r.result.split(",")[1]);
-    r.readAsDataURL(file);
-  });
-}
+initCategories();
 
-/* =======================
-   GITHUB API
-======================= */
+/* ================= GITHUB API ================= */
 async function ghPut(path, body){
-  const token = tokenEl.value.trim();
-  if(!token) throw "Token kosong";
-
-  const r = await fetch(
+  const token = $("token").value.trim();
+  const res = await fetch(
     `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${path}`,
     {
       method:"PUT",
@@ -170,110 +183,107 @@ async function ghPut(path, body){
       body:JSON.stringify(body)
     }
   );
-  if(!r.ok) throw await r.text();
-  return r.json();
+  if(!res.ok) throw await res.text();
+  return res.json();
 }
 
-async function getManifest(){
-  const token = tokenEl.value.trim();
-  try{
-    const r = await fetch(
-      `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/gallery-manifest.json`,
-      { headers:{ "Authorization":`token ${token}` } }
-    );
-    if(!r.ok) return {items:[]};
-    const j = await r.json();
-    return {
-      sha: j.sha,
-      data: JSON.parse(atob(j.content))
-    };
-  }catch{
-    return {items:[]};
+/* ================= FILE HANDLING ================= */
+function addFiles(files){
+  for(const f of files){
+    if(!f.type.startsWith("image/")) continue;
+    state.files.push(f);
   }
+  render();
 }
 
-/* =======================
-   UI
-======================= */
-filesEl.onchange = () => {
-  files = [...filesEl.files];
-  listEl.innerHTML = "";
-  files.forEach(f=>{
-    const img=document.createElement("img");
-    img.src=URL.createObjectURL(f);
-    img.className="thumb";
-    listEl.appendChild(img);
+function render(){
+  const list=$("fileList");
+  list.innerHTML="";
+  state.files.forEach((f,i)=>{
+    const d=document.createElement("div");
+    d.className="item";
+    d.innerHTML=`
+      <img class="thumb" src="${URL.createObjectURL(f)}">
+      <div>${f.name}</div>
+      <button onclick="removeFile(${i})">🗑️</button>`;
+    list.appendChild(d);
   });
   validate();
-};
-catEl.onchange = titleEl.oninput = tokenEl.oninput = validate;
+}
+
+function removeFile(i){
+  state.files.splice(i,1);
+  render();
+}
 
 function validate(){
-  uploadBtn.disabled = !(
-    files.length &&
-    catEl.value &&
-    titleEl.value.trim() &&
-    tokenEl.value.trim()
+  $("uploadBtn").disabled = !(
+    state.files.length &&
+    $("category").value &&
+    $("title").value.trim() &&
+    $("token").value.trim()
   );
 }
 
-/* =======================
-   UPLOAD
-======================= */
-uploadBtn.onclick = async () => {
-  uploadBtn.disabled = true;
+/* ================= EVENTS ================= */
+$("btnPick").onclick=()=> $("filePicker").click();
+$("filePicker").onchange=e=>addFiles(e.target.files);
+
+["dragover","dragenter"].forEach(e=>{
+  $("drop").addEventListener(e,ev=>{
+    ev.preventDefault();
+    $("drop").classList.add("dragover");
+  });
+});
+["dragleave","drop"].forEach(e=>{
+  $("drop").addEventListener(e,ev=>{
+    ev.preventDefault();
+    $("drop").classList.remove("dragover");
+  });
+});
+$("drop").addEventListener("drop",e=>addFiles(e.dataTransfer.files));
+
+window.addEventListener("paste",e=>{
+  const imgs=[...e.clipboardData.items]
+    .filter(i=>i.type.startsWith("image/"))
+    .map(i=>i.getAsFile());
+  addFiles(imgs);
+});
+
+$("category").onchange =
+$("title").oninput =
+$("token").oninput = validate;
+
+/* ================= UPLOAD ================= */
+$("uploadBtn").onclick = async ()=>{
   log("Mulai upload...");
+  const cat = $("category").value;
+  const title = $("title").value;
 
-  try{
-    const date = today();
-    const slug = slugify(titleEl.value);
-    const cat = catEl.value;
+  let i = 0;
+  for(const f of state.files){
+    const ext = f.name.split(".").pop();
+    const filename =
+      `${today()}__${slug(title)}__${Date.now()+i}.${ext}`;
+    const path = `${cat}/${filename}`;
 
-    const manifest = await getManifest();
-    const items = manifest.data?.items || [];
+    log("Upload: " + path);
 
-    let i = 0;
-    for(const f of files){
-      const ext = f.name.split(".").pop();
-      const name = `${date}__${slug}__${Date.now()+i}.${ext}`;
-      const path = `${cat}/${name}`;
-
-      log("Upload: " + path);
-
-      await ghPut(path,{
-        message:"upload via updoc",
-        content: await fileToBase64(f),
-        branch:GITHUB.branch
-      });
-
-      items.push({
-        category:cat,
-        title:titleEl.value,
-        date,
-        file:path
-      });
-      i++;
-    }
-
-    await ghPut("gallery-manifest.json",{
-      message:"update manifest",
-      content:btoa(JSON.stringify({items},null,2)),
-      sha: manifest.sha,
+    await ghPut(path,{
+      message:"upload via updoc",
+      content: await b64(f),
       branch:GITHUB.branch
     });
 
-    log("✅ SELESAI");
-    alert("Upload berhasil!");
-    filesEl.value="";
-    files=[];
-    listEl.innerHTML="";
-  }catch(e){
-    log("❌ ERROR: " + e);
-    alert("Upload gagal, cek log");
+    i++;
   }
-  validate();
+
+  log("✅ Upload selesai");
+  alert("Upload berhasil");
+
+  state.files=[];
+  render();
 };
 </script>
 </body>
 </html>
-
