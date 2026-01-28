@@ -177,6 +177,19 @@ section{padding:88px 0}
 .anchor{scroll-margin-top:110px}
 
 /* ===== HERO ===== */
+  .preview .heroimg{
+  height:240px;
+  position:relative;
+  overflow:hidden;   /* biar rounded kepotong */
+  border-radius:18px;
+}
+
+.preview .heroimg img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
 .hero{
   min-height:100vh;
   display:flex;
@@ -803,7 +816,12 @@ footer{
           <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
           <span class="pill">Live Preview</span>
         </div>
-        <div class="heroimg"></div>
+<div class="heroimg">
+  <img 
+    src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee"
+    alt="Preview Dokumentasi"
+  >
+</div>
         <div class="rows">
           <div class="row">
             <div class="box"><b>Dokumentasi</b><span>Arsip visual untuk laporan & presentasi.</span></div>
@@ -1451,6 +1469,7 @@ if (alurSection && alurLine && vFill) {
 
 </body>
 </html>
+
 
 
 
