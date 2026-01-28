@@ -652,7 +652,9 @@ select:focus,input:focus,textarea:focus{border-color:rgba(109,169,255,.55)}
   display:grid;place-items:center;
   color:rgba(255,255,255,.75);
 }
+.chev svg{width:18px;height:18px;opacity:.95}
 .qa.open .chev{transform:rotate(180deg)}
+
 
 /* ===== CONTACT (Form Only) ===== */
 .contact{
@@ -1086,7 +1088,7 @@ footer{
       <div class="qa">
         <button type="button">
           <span>Galeri ambil data dari mana?</span>
-          <div class="chev">⌄</div>
+          <div class="chev" aria-hidden="true">   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">     <path d="M6 9l6 6 6-6"></path>   </svg> </div>
         </button>
         <div class="a">Dari file <b>gallery-manifest.json</b>. Item di-render otomatis, bisa filter kategori & pencarian.</div>
       </div>
@@ -1094,7 +1096,7 @@ footer{
       <div class="qa">
         <button type="button">
           <span>Apakah halaman ini responsif untuk HP?</span>
-          <div class="chev">⌄</div>
+          <div class="chev" aria-hidden="true">   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">     <path d="M6 9l6 6 6-6"></path>   </svg> </div>
         </button>
         <div class="a">Ya. Grid, navbar, dan layout disesuaikan supaya nyaman di semua ukuran layar.</div>
       </div>
@@ -1102,7 +1104,7 @@ footer{
       <div class="qa">
         <button type="button">
           <span>Bagaimana cara ganti nomor WhatsApp / info kontak?</span>
-          <div class="chev">⌄</div>
+          <div class="chev" aria-hidden="true">   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">     <path d="M6 9l6 6 6-6"></path>   </svg> </div>
         </button>
         <div class="a">Ubah variabel <b>WA_NUMBER</b> di JavaScript dan ubah konten di section Kontak.</div>
       </div>
@@ -1110,7 +1112,7 @@ footer{
       <div class="qa">
         <button type="button">
           <span>Apakah form benar-benar mengirim pesan?</span>
-          <div class="chev">⌄</div>
+          <div class="chev" aria-hidden="true">   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">     <path d="M6 9l6 6 6-6"></path>   </svg> </div>
         </button>
         <div class="a">Form akan membuka WhatsApp (wa.me) dengan template teks berisi data yang sudah diisi.</div>
       </div>
@@ -1296,9 +1298,17 @@ progObs.observe(pFill);
 document.querySelectorAll('.qa button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const card = btn.closest('.qa');
+
+    // tutup semua dulu
+    document.querySelectorAll('.qa.open').forEach(openCard=>{
+      if(openCard !== card) openCard.classList.remove('open');
+    });
+
+    // toggle yang diklik
     card.classList.toggle('open');
   });
 });
+
 
 /* ===== GALLERY (keep JSON logic) ===== */
 const CATS=["neonbox","plang","huruf-timbul","cutting-akrilik","jasa-pasang-sticker"];
@@ -1557,6 +1567,7 @@ if(previewCard) boxObserver.observe(previewCard);
 
 </body>
 </html>
+
 
 
 
