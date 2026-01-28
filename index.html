@@ -1082,13 +1082,21 @@ footer{
       </div>     
     </div>
 
-    <div class="controls">
-      <select id="cat"></select>
-      <input id="search" placeholder="Cari dokumentasi...">
-      <div id="count" style="align-self:center;font-size:12px;color:var(--muted)">0 item</div>
-    </div>
-    <div id="grid" class="grid"></div>
-  </div>
+   <div class="controls">
+  <select id="cat"></select>
+  <input id="search" placeholder="Cari dokumentasi...">
+  <div id="count" style="align-self:center;font-size:12px;color:var(--muted)">0 item</div>
+</div>
+
+<!-- tombol muncul hanya kalau kategori > 8 -->
+<div style="margin:10px 0 0; display:flex; justify-content:flex-end;">
+  <a id="btnMoreCats" class="btn" href="./gallery" style="display:none;">
+    Lihat selengkapnya
+  </a>
+</div>
+
+<div id="grid" class="grid"></div>
+
 </section>
 
 <!-- MODAL -->
@@ -1402,39 +1410,90 @@ progObs.observe(pFill);
 
 
 
-/* ===== GALLERY (keep JSON logic) ===== */
-const CATS=["neonbox","plang","huruf-timbul","cutting-akrilik","jasa-pasang-sticker"];
-const catSel=document.getElementById("cat");
-catSel.innerHTML='<option value="all">Semua Kategori</option>'+CATS.map(c=>`<option>${c}</option>`).join("");
+/* ===== GALLERY (config + manifest) ===== */
+const CONFIG_URL = "./gallery-config.json";
+const MANIFEST_URL = "./gallery-manifest.json";
 
-let DATA=[];
-fetch("./gallery-manifest.json")
-  .then(r=>r.json())
-  .then(j=>{DATA=j.items||[];render();})
-  .catch(()=>{document.getElementById("count").textContent="Manifest tidak ditemukan";});
+const catSel = document.getElementById("cat");
+const btnMoreCats = document.getElementById("btnMoreCats");
+
+let DATA = [];
+let CATEGORIES = [];
+let INDEX_MAX = 8;
+
+async function fetchJSON(url){
+  const r = await fetch(url, { cache: "no-store" });
+  if(!r.ok) throw new Error(`Gagal load ${url}`);
+  return r.json();
+}
+
+function buildCategorySelect(){
+  // hanya tampil max 8 kategori di INDEX
+  const shown = CATEGORIES.slice(0, INDEX_MAX);
+
+  catSel.innerHTML =
+    '<option value="all">Semua Kategori</option>' +
+    shown.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+
+  // tombol lihat selengkapnya kalau kategori > 8
+  if (btnMoreCats){
+    btnMoreCats.style.display = (CATEGORIES.length > INDEX_MAX) ? "inline-flex" : "none";
+  }
+}
+
+async function initGallery(){
+  try{
+    const [cfg, manifest] = await Promise.all([
+      fetchJSON(CONFIG_URL),
+      fetchJSON(MANIFEST_URL)
+    ]);
+
+    CATEGORIES = Array.isArray(cfg.categories) ? cfg.categories : [];
+    INDEX_MAX = Number(cfg.indexMaxCategories || 8);
+
+    DATA = Array.isArray(manifest.items) ? manifest.items : [];
+
+    buildCategorySelect();
+    render();
+  }catch(err){
+    console.error(err);
+    document.getElementById("count").textContent = "Config/Manifest tidak ditemukan";
+  }
+}
 
 function render(){
-  const q=document.getElementById("search").value.toLowerCase();
-  const c=catSel.value;
-  const grid=document.getElementById("grid");
-  grid.innerHTML="";
-  const f=DATA.filter(i=>(c==="all"||i.category===c)&&String(i.title||"").toLowerCase().includes(q));
-  document.getElementById("count").textContent=f.length+" item";
+  const q = document.getElementById("search").value.toLowerCase();
+  const c = catSel.value;
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  const f = DATA.filter(i =>
+    (c === "all" || i.category === c) &&
+    String(i.title || "").toLowerCase().includes(q)
+  );
+
+  document.getElementById("count").textContent = f.length + " item";
+
   f.forEach(i=>{
-    const d=document.createElement("div");
-    d.className="gcard";
-    d.innerHTML=`<img loading="lazy" src="./${i.file}" alt="${escapeHtml(i.title||'Dokumentasi')}">
+    const d = document.createElement("div");
+    d.className = "gcard";
+    d.innerHTML = `<img loading="lazy" src="./${i.file}" alt="${escapeHtml(i.title||'Dokumentasi')}">
       <div class="meta">
         <span class="badge">${escapeHtml(i.category||'-')}</span>
         <span class="badge">${escapeHtml(i.date||'-')}</span>
         <div class="title">${escapeHtml(i.title||'Untitled')}</div>
       </div>`;
-    d.onclick=()=>openModal(i.file);
+    d.onclick = ()=>openModal(i.file);
     grid.appendChild(d);
   });
 }
+
 document.getElementById("search").addEventListener("input", render);
 catSel.addEventListener("change", render);
+
+// jalanin
+initGallery();
+
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
@@ -1659,6 +1718,7 @@ if(previewCard) boxObserver.observe(previewCard);
 
 </body>
 </html>
+
 
 
 
