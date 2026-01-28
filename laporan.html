@@ -753,21 +753,30 @@ async function loadRows(){
  ***********************/
 function buildCopyText(r){
   const dateLabel = r.date ? fmtDateUTC(r.date) : (r.tanggalRaw || "-");
+
   const lap = (r.lapangan || "").trim();
   const op  = (r.operator || "").trim();
 
-  // gabungan tugas (dua bagian)
   const parts = [];
+
+  // tanggal
   parts.push(`Tanggal: ${dateLabel}`);
-  parts.push("");
-  parts.push("Tugas Tim Lapangan:");
-  parts.push(lap || "-");
-  parts.push("");
-  parts.push("Tugas Tim Operator:");
-  parts.push(op || "-");
+  parts.push(""); // baris kosong
+
+  // tugas lapangan (langsung isinya, tanpa judul)
+  if(lap){
+    parts.push(lap);
+    parts.push(""); // jarak antar grup
+  }
+
+  // tugas operator (langsung isinya)
+  if(op){
+    parts.push(op);
+  }
 
   return parts.join("\n");
 }
+
 
 async function copyTextToClipboard(text){
   try{
@@ -1065,3 +1074,4 @@ loadAll();
 </script>
 </body>
 </html>
+
