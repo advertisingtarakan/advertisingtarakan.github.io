@@ -651,6 +651,76 @@ footer{
 
 /* spacing for anchors so navbar doesn't cover */
 .anchor{scroll-margin-top:110px}
+
+  /* ===== REVEAL ON SCROLL (fade-in from bottom) ===== */
+.reveal{
+  opacity:0;
+  transform: translateY(14px);
+  transition: opacity .7s ease, transform .7s ease;
+  will-change: opacity, transform;
+}
+.reveal.in{
+  opacity:1;
+  transform: translateY(0);
+}
+
+/* ===== TIMELINE ANIMATION (bar + dots + steps sequential) ===== */
+.tline{opacity:0; transform: translateY(10px); transition:opacity .7s ease, transform .7s ease;}
+.tline.in{opacity:1; transform:none;}
+
+.tline::before{
+  transform: scaleY(0);
+  transform-origin: top;
+  opacity:0;
+  transition: transform .9s ease, opacity .5s ease;
+}
+.tline.in::before{
+  transform: scaleY(1);
+  opacity:1;
+}
+
+.titem{
+  opacity:0;
+  transform: translateY(14px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.titem.in{
+  opacity:1;
+  transform:none;
+}
+.titem::before{
+  transform: scale(.35);
+  opacity:0;
+  transition: transform .55s ease, opacity .55s ease;
+}
+.titem.in::before{
+  transform: scale(1);
+  opacity:1;
+}
+
+/* ===== CONTACT QUICK ICON SIZE FIX (mobile friendly) ===== */
+.info .tile .ic{
+  width:52px !important;
+  height:52px !important;
+  min-width:52px !important;
+  min-height:52px !important;
+  border-radius:18px !important;
+  font-size:18px;
+}
+@media(max-width:480px){
+  .info .tile .ic{
+    width:58px !important;
+    height:58px !important;
+    min-width:58px !important;
+    min-height:58px !important;
+    font-size:20px;
+  }
+}
+  @media(max-width:480px){
+  .info .tile{gap:14px}
+}
+
+
 </style>
 </head>
 
@@ -1288,7 +1358,70 @@ ${pesan}`;
 
 /* ===== misc ===== */
 document.getElementById("year").textContent = new Date().getFullYear();
+
+  /* ===== GLOBAL REVEAL SETUP ===== */
+function markRevealElements(){
+  const selectors = [
+    "h1","h2","h3","p",
+    ".section-title",
+    ".stat",".service",".gcard",
+    ".timeline",".progress",
+    ".qa",".panel",".tile",
+    ".badges",".badge"
+  ];
+
+  const nodes = document.querySelectorAll(selectors.join(","));
+  nodes.forEach(el=>{
+    // jangan animasiin nav/menu/button/form input
+    if (el.closest(".navbar") || el.closest("button") || el.matches("button")) return;
+    if (el.closest("form") && (el.matches("input,textarea,select,label"))) return;
+    if (el.id === "drawer" || el.closest("#drawer")) return;
+
+    // jangan double set
+    el.classList.add("reveal");
+  });
+}
+
+markRevealElements();
+
+const revealObs = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add("in");
+      revealObs.unobserve(e.target);
+    }
+  });
+},{threshold:0.18, rootMargin:"0px 0px -8% 0px"});
+
+document.querySelectorAll(".reveal").forEach(el=>revealObs.observe(el));
+
+/* ===== TIMELINE (#alur) SEQUENTIAL ANIMATION ===== */
+const alurSection = document.getElementById("alur");
+const alurLine = alurSection?.querySelector(".tline");
+const alurItems = alurSection ? Array.from(alurSection.querySelectorAll(".titem")) : [];
+
+if(alurSection && alurLine){
+  const alurObs = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+
+      // munculin bar dulu
+      alurLine.classList.add("in");
+
+      // lalu step berurutan
+      alurItems.forEach((item, idx)=>{
+        setTimeout(()=> item.classList.add("in"), 180 + idx * 180);
+      });
+
+      alurObs.unobserve(alurSection);
+    });
+  },{threshold:0.25, rootMargin:"0px 0px -10% 0px"});
+
+  alurObs.observe(alurSection);
+}
+
 </script>
 
 </body>
 </html>
+
