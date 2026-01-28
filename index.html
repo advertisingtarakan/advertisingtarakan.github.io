@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dokumentasi Pemasangan</title>
+<title>Landing Page Dokumentasi</title>
 
 <style>
 :root{
@@ -15,6 +15,7 @@
   --accent:#6da9ff;
 }
 *{box-sizing:border-box}
+html{scroll-behavior:smooth}
 body{
   margin:0;
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
@@ -25,14 +26,9 @@ body{
   color:var(--text);
 }
 
-/* ===== SECTION GENERIC ===== */
-section{
-  padding:80px 20px;
-}
-.container{
-  max-width:1200px;
-  margin:auto;
-}
+/* ===== GENERIC ===== */
+section{padding:90px 20px}
+.container{max-width:1200px;margin:auto}
 
 /* ===== HERO ===== */
 .hero{
@@ -41,27 +37,26 @@ section{
   align-items:center;
 }
 .hero h1{
-  font-size:clamp(34px,5vw,62px);
+  font-size:clamp(36px,6vw,64px);
   line-height:1.05;
-  margin:0 0 20px;
 }
 .hero p{
   max-width:720px;
-  font-size:clamp(15px,2vw,19px);
   color:var(--muted);
-  line-height:1.7;
+  line-height:1.8;
+  font-size:18px;
 }
-.hero .tagline{
-  margin-top:40px;
-  letter-spacing:3px;
-  font-size:12px;
-  color:var(--muted);
-  opacity:.7;
-  animation:blink 1.8s infinite;
+.hero .cta{
+  margin-top:30px;
+  display:inline-block;
+  padding:14px 26px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  color:#fff;
+  text-decoration:none;
 }
-@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
 
-/* ===== STATS ===== */
+/* ===== STATS (ANIMATED) ===== */
 .stats{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -71,61 +66,67 @@ section{
 .stat{
   background:var(--panel);
   border:1px solid var(--line);
-  border-radius:18px;
-  padding:26px;
+  border-radius:20px;
+  padding:30px;
   text-align:center;
 }
 .stat b{
+  font-size:42px;
   display:block;
-  font-size:36px;
 }
 .stat span{
-  font-size:13px;
   color:var(--muted);
+  font-size:13px;
 }
 
-/* ===== SERVICES ===== */
-.services{
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:16px;
+/* ===== PROCESS TIMELINE ===== */
+.timeline{
+  position:relative;
+  max-width:900px;
+  margin:auto;
 }
-@media(max-width:1000px){.services{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:600px){.services{grid-template-columns:repeat(2,1fr)}}
-.service{
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:20px;
-  background:rgba(0,0,0,.35);
+.timeline::before{
+  content:"";
+  position:absolute;
+  left:20px;
+  top:0;
+  bottom:0;
+  width:3px;
+  background:var(--line);
 }
-.service h4{
-  margin:0 0 8px;
+.progress{
+  position:absolute;
+  left:20px;
+  top:0;
+  width:3px;
+  background:var(--accent);
+  height:0%;
+  transition:.3s;
 }
-.service p{
-  margin:0;
-  font-size:13px;
-  color:var(--muted);
-}
-
-/* ===== PROCESS ===== */
-.process{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:18px;
-}
-@media(max-width:900px){.process{grid-template-columns:repeat(2,1fr)}}
 .step{
-  border-left:3px solid var(--accent);
-  padding-left:14px;
+  display:flex;
+  gap:30px;
+  padding:40px 0 40px 0;
+  opacity:.4;
+  transform:translateY(20px);
+  transition:.5s;
+}
+.step.active{
+  opacity:1;
+  transform:none;
+}
+.dot{
+  width:14px;
+  height:14px;
+  background:var(--accent);
+  border-radius:50%;
+  margin-left:14px;
+  margin-top:6px;
 }
 .step h4{margin:0 0 6px}
-.step p{
-  margin:0;
-  font-size:13px;
-  color:var(--muted);
-}
+.step p{margin:0;color:var(--muted)}
 
-/* ===== GALLERY ===== */
+/* ===== GALLERY (AS IS) ===== */
 .controls{
   display:grid;
   grid-template-columns:220px 1fr auto;
@@ -149,7 +150,6 @@ select,input{
 @media(max-width:1000px){.grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:450px){.grid{grid-template-columns:1fr}}
-
 .card{
   border:1px solid var(--line);
   border-radius:16px;
@@ -157,11 +157,7 @@ select,input{
   background:rgba(0,0,0,.35);
   cursor:pointer;
 }
-.card img{
-  width:100%;
-  height:190px;
-  object-fit:cover;
-}
+.card img{width:100%;height:190px;object-fit:cover}
 .meta{padding:10px}
 .badge{
   font-size:11px;
@@ -170,49 +166,16 @@ select,input{
   border:1px solid var(--line);
   margin-right:6px;
 }
-.title{
-  margin-top:6px;
-  font-size:13px;
-  font-weight:700;
-}
+.title{margin-top:6px;font-size:13px;font-weight:700}
 
-/* ===== MODAL ZOOM ===== */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.88);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:999;
+/* ===== FOOTER ===== */
+footer{
+  padding:60px 20px;
+  border-top:1px solid var(--line);
+  text-align:center;
+  color:var(--muted);
 }
-.modal.open{display:flex}
-.modal-inner{
-  width:95vw;
-  height:90vh;
-  position:relative;
-  overflow:hidden;
-}
-.modal img{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%) scale(1);
-  transform-origin:center;
-  cursor:grab;
-}
-.modal button{
-  position:absolute;
-  top:16px;
-  right:16px;
-  padding:8px 12px;
-  border-radius:10px;
-  border:1px solid var(--line);
-  background:rgba(0,0,0,.6);
-  color:#fff;
-  font-weight:700;
-  cursor:pointer;
-}
+footer a{color:#fff;text-decoration:none;margin:0 10px}
 </style>
 </head>
 
@@ -223,109 +186,131 @@ select,input{
   <div class="container">
     <h1>Dokumentasi Pemasangan<br>Lapangan & Visual</h1>
     <p>
-      Halaman ini berfungsi sebagai pusat dokumentasi kegiatan pemasangan,
-      menampilkan hasil kerja lapangan secara visual, terstruktur,
-      dan mudah ditelusuri untuk kebutuhan evaluasi, presentasi, maupun arsip.
+      Landing page dokumentasi pemasangan profesional,
+      dirancang untuk menampilkan progres kerja,
+      visual lapangan, dan arsip proyek secara modern.
     </p>
-    <div class="tagline">SCROLL TO EXPLORE ↓</div>
+    <a href="#gallery" class="cta">Lihat Dokumentasi</a>
   </div>
 </section>
 
 <!-- STATS -->
 <section>
-  <div class="container stats">
-    <div class="stat"><b>1.200+</b><span>Pemasangan</span></div>
-    <div class="stat"><b>5</b><span>Kategori Layanan</span></div>
-    <div class="stat"><b>24/7</b><span>Dokumentasi Aktif</span></div>
-    <div class="stat"><b>100%</b><span>Visual Lapangan</span></div>
-  </div>
-</section>
-
-<!-- SERVICES -->
-<section>
-  <div class="container services">
-    <div class="service"><h4>Neonbox</h4><p>Instalasi media promosi visual dengan pencahayaan.</p></div>
-    <div class="service"><h4>Plang</h4><p>Pemasangan papan informasi & branding.</p></div>
-    <div class="service"><h4>Huruf Timbul</h4><p>Instalasi lettering 3D profesional.</p></div>
-    <div class="service"><h4>Cutting Akrilik</h4><p>Produksi & pemasangan material akrilik.</p></div>
-    <div class="service"><h4>Sticker</h4><p>Pemasangan sticker branding & informasi.</p></div>
+  <div class="container stats" id="stats">
+    <div class="stat"><b data-target="1200">0</b><span>Pemasangan</span></div>
+    <div class="stat"><b data-target="5">0</b><span>Kategori Layanan</span></div>
+    <div class="stat"><b data-target="24">0</b><span>Dokumentasi Aktif</span></div>
+    <div class="stat"><b data-target="100">0</b><span>Visual Lapangan (%)</span></div>
   </div>
 </section>
 
 <!-- PROCESS -->
 <section>
-  <div class="container process">
-    <div class="step"><h4>Perencanaan</h4><p>Analisa lokasi & kebutuhan pemasangan.</p></div>
-    <div class="step"><h4>Produksi</h4><p>Pembuatan material sesuai spesifikasi.</p></div>
-    <div class="step"><h4>Pemasangan</h4><p>Eksekusi lapangan oleh tim teknis.</p></div>
-    <div class="step"><h4>Dokumentasi</h4><p>Pengambilan visual sebagai arsip & laporan.</p></div>
+  <div class="container">
+    <h2>Alur Pengerjaan</h2>
+    <div class="timeline" id="timeline">
+      <div class="progress" id="progress"></div>
+
+      <div class="step"><div class="dot"></div>
+        <div><h4>Perencanaan</h4><p>Analisa lokasi & kebutuhan pemasangan.</p></div>
+      </div>
+
+      <div class="step"><div class="dot"></div>
+        <div><h4>Produksi</h4><p>Pembuatan material sesuai spesifikasi.</p></div>
+      </div>
+
+      <div class="step"><div class="dot"></div>
+        <div><h4>Pemasangan</h4><p>Eksekusi lapangan oleh tim teknis.</p></div>
+      </div>
+
+      <div class="step"><div class="dot"></div>
+        <div><h4>Dokumentasi</h4><p>Pengambilan visual sebagai arsip & laporan.</p></div>
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- GALLERY -->
-<section>
+<section id="gallery">
   <div class="container">
     <div class="controls">
       <select id="cat"></select>
       <input id="search" placeholder="Cari dokumentasi...">
-      <div id="count" style="align-self:center;font-size:12px;color:var(--muted)">0 item</div>
+      <div id="count" style="align-self:center;font-size:12px">0 item</div>
     </div>
     <div id="grid" class="grid"></div>
   </div>
 </section>
 
-<!-- MODAL -->
-<div id="modal" class="modal">
-  <div class="modal-inner">
-    <button onclick="closeModal()">✕</button>
-    <img id="modalImg">
+<!-- FOOTER -->
+<footer>
+  <div>📞 1234567890</div>
+  <div style="margin:15px 0">
+    <a href="#">Instagram</a>
+    <a href="#">Facebook</a>
+    <a href="#">WhatsApp</a>
   </div>
-</div>
+  <div>© 2026 Dokumentasi Pemasangan</div>
+</footer>
 
 <script>
-const CATS=["neonbox","plang","huruf-timbul","cutting-akrilik","jasa-pasang-sticker"];
-const catSel=document.getElementById("cat");
-catSel.innerHTML='<option value="all">Semua Kategori</option>'+CATS.map(c=>`<option>${c}</option>`).join("");
+/* ===== STAT COUNTER ===== */
+const stats=document.querySelectorAll("[data-target]");
+const statObs=new IntersectionObserver(e=>{
+  e.forEach(i=>{
+    if(i.isIntersecting){
+      const el=i.target;
+      const target=+el.dataset.target;
+      let n=0;
+      const inc=target/80;
+      const t=setInterval(()=>{
+        n+=inc;
+        if(n>=target){el.textContent=target;clearInterval(t)}
+        else el.textContent=Math.floor(n);
+      },20);
+      statObs.unobserve(el);
+    }
+  });
+},{threshold:.6});
+stats.forEach(s=>statObs.observe(s));
 
+/* ===== TIMELINE ===== */
+const steps=[...document.querySelectorAll(".step")];
+const progress=document.getElementById("progress");
+window.addEventListener("scroll",()=>{
+  let active=0;
+  steps.forEach((s,i)=>{
+    const r=s.getBoundingClientRect();
+    if(r.top<window.innerHeight*0.6){s.classList.add("active");active=i+1}
+  });
+  progress.style.height=(active/steps.length)*100+"%";
+});
+
+/* ===== GALLERY (UNCHANGED) ===== */
+const CATS=["neonbox","plang","huruf-timbul","cutting-akrilik","jasa-pasang-sticker"];
+cat.innerHTML='<option value="all">Semua Kategori</option>'+CATS.map(c=>`<option>${c}</option>`).join("");
 let DATA=[];
 fetch("./gallery-manifest.json").then(r=>r.json()).then(j=>{DATA=j.items||[];render();});
-
 function render(){
   const q=search.value.toLowerCase();
-  const c=catSel.value;
+  const c=cat.value;
   grid.innerHTML="";
   const f=DATA.filter(i=>(c==="all"||i.category===c)&&i.title.toLowerCase().includes(q));
   count.textContent=f.length+" item";
   f.forEach(i=>{
     const d=document.createElement("div");
     d.className="card";
-    d.innerHTML=`<img src="./${i.file}"><div class="meta">
-      <span class="badge">${i.category}</span>
-      <span class="badge">${i.date}</span>
-      <div class="title">${i.title}</div></div>`;
-    d.onclick=()=>openModal(i.file);
+    d.innerHTML=`<img src="./${i.file}">
+      <div class="meta">
+        <span class="badge">${i.category}</span>
+        <span class="badge">${i.date}</span>
+        <div class="title">${i.title}</div>
+      </div>`;
     grid.appendChild(d);
   });
 }
-catSel.onchange=render;
+cat.onchange=render;
 search.oninput=render;
-
-/* ZOOM */
-let scale=1,dx=0,dy=0,drag=false,sx,sy;
-function openModal(src){
-  modal.classList.add("open");
-  modalImg.src="./"+src;
-  scale=1;dx=0;dy=0;apply();
-}
-function closeModal(){modal.classList.remove("open")}
-function apply(){
-  modalImg.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(${scale})`;
-}
-modalImg.onwheel=e=>{e.preventDefault();scale+=e.deltaY*-0.001;scale=Math.max(.5,Math.min(5,scale));apply()};
-modalImg.onmousedown=e=>{drag=true;sx=e.clientX;sy=e.clientY};
-window.onmouseup=()=>drag=false;
-window.onmousemove=e=>{if(!drag)return;dx+=e.clientX-sx;dy+=e.clientY-sy;sx=e.clientX;sy=e.clientY;apply()};
-modalImg.ondblclick=()=>{scale=1;dx=dy=0;apply()};
 </script>
 
 </body>
