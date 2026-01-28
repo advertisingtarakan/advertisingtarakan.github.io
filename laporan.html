@@ -12,7 +12,6 @@
       --muted:#9fb0d0;
       --text:#e8eeff;
       --line:rgba(255,255,255,.08);
-      --accent:#7aa7ff;
       --good:#5df0a6;
       --warn:#ffd27a;
       --bad:#ff7a7a;
@@ -80,7 +79,7 @@
       border-radius:12px;
       cursor:pointer;
       transition: transform .05s ease, background .2s ease, border-color .2s ease;
-      font-weight:700;
+      font-weight:800;
       font-size:13px;
       display:inline-flex;
       gap:8px;
@@ -116,7 +115,7 @@
 
     .controls{
       display:grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr auto;
+      grid-template-columns: 1fr 1fr 1fr auto;
       gap:10px;
       align-items:end;
       margin-top:10px;
@@ -126,7 +125,7 @@
       .controls .full{ grid-column: 1 / -1; }
     }
     label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
-    select, input[type="date"], input[type="text"]{
+    input[type="date"], input[type="text"]{
       width:100%;
       padding:10px 10px;
       border-radius:12px;
@@ -135,7 +134,7 @@
       color:var(--text);
       outline:none;
     }
-    select:focus, input:focus{
+    input:focus{
       border-color: rgba(122,167,255,.55);
       box-shadow: 0 0 0 3px rgba(122,167,255,.15);
     }
@@ -166,7 +165,7 @@
     table{
       width:100%;
       border-collapse: collapse;
-      min-width: 760px; /* biar bisa swipe di HP */
+      min-width: 760px;
     }
     thead th{
       position: sticky;
@@ -188,7 +187,6 @@
       font-size:13px;
     }
     tbody tr:hover td{ background: rgba(255,255,255,.03); }
-    .td-date{ white-space:nowrap; font-family: var(--mono); font-size:12px; }
     .tasks{ white-space:pre-wrap; color:rgba(232,238,255,.9); }
 
     .today-row td{
@@ -196,7 +194,33 @@
       border-bottom-color: rgba(122,167,255,.25);
     }
     .today-row:hover td{ background: rgba(122,167,255,.16); }
-    .today-badge{
+
+    .libur-row td{
+      background: rgba(255, 60, 60, .22);
+      border-bottom-color: rgba(255, 90, 90, .35);
+    }
+    .libur-row:hover td{ background: rgba(255, 60, 60, .28); }
+
+    /* date cell layout */
+    .date-cell{
+      font-family: var(--mono);
+      font-size:12px;
+      line-height:1.25;
+    }
+    .date-main{
+      white-space:nowrap;
+      display:block;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .date-sub{
+      margin-top:6px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .badge{
       display:inline-flex;
       align-items:center;
       gap:8px;
@@ -204,12 +228,17 @@
       border-radius:999px;
       border:1px solid rgba(255,255,255,.18);
       background: rgba(0,0,0,.20);
-      font-size:12px;
+      font-size:11px;
       font-weight:900;
       letter-spacing:.4px;
       text-transform:uppercase;
-      margin-left:10px;
+      width: fit-content;
     }
+    .badge.libur{
+      background: rgba(255, 60, 60, .25);
+      border-color: rgba(255, 120, 120, .40);
+    }
+
     .live-dot{
       width:8px; height:8px; border-radius:50%;
       background: #ff2d2d;
@@ -221,40 +250,25 @@
     @keyframes blink{ 0%,49%{opacity:1} 50%,100%{opacity:.25} }
     @keyframes pulse{ 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.2);opacity:.7} 100%{transform:scale(1);opacity:1} }
 
-    .today-sep td{ padding:0 !important; border-bottom:1px solid rgba(255,255,255,.10); }
-    .today-sep .sep-inner{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      padding:10px;
-      background: linear-gradient(to right, rgba(255,45,45,.10), rgba(122,167,255,.10), rgba(93,240,166,.10));
-      border-top:1px solid rgba(255,255,255,.10);
-      border-bottom:1px solid rgba(255,255,255,.10);
+    .copy-btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      padding:8px 10px;
+      border-radius:12px;
+      cursor:pointer;
       font-weight:900;
-      letter-spacing:.6px;
-      text-transform:uppercase;
-    }
-
-    .libur-row td{
-      background: rgba(255, 60, 60, .22);
-      border-bottom-color: rgba(255, 90, 90, .35);
-    }
-    .libur-row:hover td{ background: rgba(255, 60, 60, .28); }
-    .libur-tag{
+      font-size:12px;
       display:inline-flex;
       align-items:center;
       gap:8px;
-      padding:4px 10px;
-      border-radius:999px;
-      background: rgba(255, 60, 60, .25);
-      border:1px solid rgba(255, 120, 120, .40);
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:.4px;
-      text-transform:uppercase;
-      margin-left:10px;
+      width: fit-content;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
     }
+    .copy-btn:hover{ background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.14); }
+    .copy-btn:active{ transform: translateY(1px); }
+    .copy-hint{ font-size:11px; color:var(--muted); }
 
     .status{
       display:flex;
@@ -274,7 +288,6 @@
     .dot.bad{ background: var(--bad); box-shadow: 0 0 0 3px rgba(255,122,122,.12); }
 
     .footer{ margin-top:18px; color:var(--muted); font-size:12px; text-align:center; opacity:.9; }
-
     .pill{
       font-family: var(--mono);
       padding:3px 8px;
@@ -293,7 +306,7 @@
       .controls{ grid-template-columns: 1fr; }
       .controls .full{ grid-column:auto; }
       .card{ padding:14px; }
-      .today-badge, .libur-tag{ margin-left:6px; }
+      table{ min-width: 720px; }
     }
   </style>
 </head>
@@ -303,13 +316,12 @@
   <div class="header-inner">
     <div class="brand">
       <h1>Display Laporan Kegiatan Harian</h1>
-      <div class="sub">Sumber: Google Sheet (tab <b>Kegiatan</b>) • Filter & tabel responsif</div>
+      <div class="sub">Filter & tabel responsif • Copy tugas gabungan Lapangan + Operator</div>
     </div>
 
     <div class="top-actions">
       <button class="btn" id="btnRefresh" title="Ambil data terbaru dari Google Sheet">🔄 Refresh</button>
       <button class="btn btn-primary" id="btnKeuangan" title="Buka laporan keuangan (butuh password)">💰 Laporan Keuangan</button>
-      <a class="btn" id="btnSource" href="#" target="_blank" rel="noreferrer">🔗 Buka Sheet</a>
     </div>
   </div>
 </header>
@@ -347,7 +359,7 @@
         <table>
           <thead>
             <tr>
-              <th style="width:160px;">Tanggal</th>
+              <th style="width:190px;">Tanggal</th>
               <th>Tugas Tim Lapangan</th>
               <th>Tugas Tim Operator</th>
               <th style="width:110px;">Total Task</th>
@@ -384,6 +396,10 @@ const TARGET_SHEET_NAME = "Kegiatan";
 const KEUANGAN_PASSWORD = "AdvertisingJaya";
 const LIBUR_KEYWORDS = ["libur", "off", "holiday", "cuti"];
 
+// timezone rule for "Copy Tugas" on today
+const TIMEZONE_WITA = "Asia/Makassar";
+const TODAY_COPY_SHOW_HOUR = 17; // >= 17:00 WITA
+
 // network hardening
 const FETCH_TIMEOUT_MS = 12000;
 const FETCH_RETRIES = 3;        // total percobaan = 1 + retries
@@ -392,11 +408,12 @@ const RETRY_BASE_DELAY_MS = 550;
 /***********************
  * STATE
  ***********************/
-let RAW_ROWS = []; // {date, lapangan, operator, total, tanggalRaw, isLibur, isToday}
+let RAW_ROWS = [];      // semua data
+let LAST_FILTERED = []; // hasil filter terakhir (buat re-render tombol copy today)
 let __loading = false;
 
 /***********************
- * UI
+ * UI HELPERS
  ***********************/
 function setStatus(type, text){
   const dot = document.getElementById("statusDot");
@@ -412,6 +429,36 @@ function escapeHtml(str){
     .replaceAll(">","&gt;");
 }
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/***********************
+ * TIME (WITA)
+ ***********************/
+function getWitaParts(){
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIMEZONE_WITA,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+  const parts = dtf.formatToParts(new Date());
+  const get = (t) => parts.find(p => p.type === t)?.value;
+  return {
+    year: Number(get("year")),
+    month: Number(get("month")),
+    day: Number(get("day")),
+    hour: Number(get("hour")),
+    minute: Number(get("minute")),
+    second: Number(get("second"))
+  };
+}
+function isAfter1700Wita(){
+  const p = getWitaParts();
+  return (p.hour > TODAY_COPY_SHOW_HOUR) || (p.hour === TODAY_COPY_SHOW_HOUR); // >= 17
+}
 
 /***********************
  * FETCH (retry + timeout + backoff)
@@ -587,6 +634,21 @@ function pubCsvUrl(pubhtml, gid){
   p.set("output", "csv");
   return `${base}?${p.toString()}`;
 }
+
+function normalizeLibur(lap, op){
+  const combinedLower = (String(lap||"") + " " + String(op||"")).toLowerCase();
+  const keywordLibur = LIBUR_KEYWORDS.some(k => combinedLower.includes(k));
+  const totalCount = countTasks(lap) + countTasks(op);
+  const isLibur = keywordLibur || totalCount === 0;
+
+  return {
+    isLibur,
+    lapangan: isLibur ? "LIBUR" : (lap || ""),
+    operator: isLibur ? "LIBUR" : (op || ""),
+    total: isLibur ? 0 : totalCount
+  };
+}
+
 function extractRowsFromGrid(grid){
   // cari header
   let headerRow = -1;
@@ -621,19 +683,15 @@ function extractRowsFromGrid(grid){
     if(!tanggalStr && !lap && !op) continue;
 
     const date = toDateFlexible(tanggalStr);
-
-    const combinedLower = (lap + " " + op).toLowerCase();
-    const keywordLibur = LIBUR_KEYWORDS.some(k => combinedLower.includes(k));
-    const totalCount = countTasks(lap) + countTasks(op);
-    const isLibur = keywordLibur || totalCount === 0;
+    const norm = normalizeLibur(lap, op);
 
     out.push({
       date,
-      lapangan: isLibur ? "LIBUR" : lap,
-      operator: isLibur ? "LIBUR" : op,
-      total: isLibur ? 0 : totalCount,
       tanggalRaw: tanggalStr,
-      isLibur,
+      lapangan: norm.lapangan,
+      operator: norm.operator,
+      total: norm.total,
+      isLibur: norm.isLibur,
       isToday: date ? isSameDayUTC(date, tday) : false
     });
   }
@@ -646,24 +704,22 @@ function extractRowsFromGrid(grid){
 }
 
 /***********************
- * LOAD (robust)
+ * LOAD
  ***********************/
 async function loadRows(){
-  // 1) ambil pubhtml untuk mapping gid
   const mainHtml = await fetchTextWithRetry(PUBLISHED_HTML_URL);
   const gidMap = getGidMapFromPubhtml(mainHtml);
 
   let gid = gidMap.get(TARGET_SHEET_NAME.toLowerCase()) || "0";
   document.getElementById("debugGid").textContent = `gid: ${gid}`;
 
-  // 2) coba fetch CSV target gid
   const primaryUrl = pubCsvUrl(PUBLISHED_HTML_URL, gid);
   document.getElementById("debugSource").textContent = "source: csv";
 
   let csvText = await fetchTextWithRetry(primaryUrl);
   let grid = parseCSV(csvText);
 
-  // 3) fallback gid kalau grid kosong/aneh
+  // fallback gid kalau grid kosong/aneh
   if(grid.length < 2){
     const fallbacks = ["0","1","2","3","4","5","6","7","8","9"];
     for(const g of fallbacks){
@@ -683,8 +739,53 @@ async function loadRows(){
       }
     }
   }
-
   return extractRowsFromGrid(grid);
+}
+
+/***********************
+ * COPY
+ ***********************/
+function buildCopyText(r){
+  const dateLabel = r.date ? fmtDateUTC(r.date) : (r.tanggalRaw || "-");
+  const lap = (r.lapangan || "").trim();
+  const op  = (r.operator || "").trim();
+
+  // gabungan tugas (dua bagian)
+  const parts = [];
+  parts.push(`Tanggal: ${dateLabel}`);
+  parts.push("");
+  parts.push("Tugas Tim Lapangan:");
+  parts.push(lap || "-");
+  parts.push("");
+  parts.push("Tugas Tim Operator:");
+  parts.push(op || "-");
+
+  return parts.join("\n");
+}
+
+async function copyTextToClipboard(text){
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  }catch(_e){ /* fallback */ }
+
+  try{
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    ta.style.top = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  }catch(_e2){
+    return false;
+  }
 }
 
 /***********************
@@ -717,51 +818,79 @@ function renderChips(filtered){
   `;
 }
 
+function shouldShowCopyButton(r){
+  // kalau libur, tetep boleh copy? biasanya tidak perlu — saya hide biar rapi
+  if(r.isLibur) return false;
+
+  // past date: selalu tampil
+  if(!r.isToday) return true;
+
+  // today: tampil hanya setelah >= 17:00 WITA
+  return isAfter1700Wita();
+}
+
 function renderTable(filtered){
   const tbody = document.getElementById("tbody");
+
   if(filtered.length === 0){
     tbody.innerHTML = `<tr><td colspan="4" class="muted" style="padding:14px;">Tidak ada data sesuai filter.</td></tr>`;
     return;
   }
 
-  // tampilkan terbaru di atas
+  // terbaru di atas
   const sorted = filtered.slice().sort((a,b)=>{
     const ta = a.date ? a.date.getTime() : -Infinity;
     const tb = b.date ? b.date.getTime() : -Infinity;
     return tb - ta;
   });
 
-  const firstTodayIdx = sorted.findIndex(r => r.isToday);
-  let html = "";
-
-  if(firstTodayIdx !== -1){
-    html += `
-      <tr class="today-sep">
-        <td colspan="4">
-          <div class="sep-inner">
-            <span class="live-dot"></span>
-            <span class="blink-text">LIVE • TASK HARI INI</span>
-            <span class="live-dot"></span>
-          </div>
-        </td>
-      </tr>
-    `;
-  }
-
-  html += sorted.map((r) => {
+  const html = sorted.map((r) => {
     const dateLabel = r.date ? fmtDateUTC(r.date) : (r.tanggalRaw || "-");
     const rowClass = [r.isLibur ? "libur-row" : "", r.isToday ? "today-row" : ""].filter(Boolean).join(" ");
 
-    const badge = r.isLibur
-      ? `<span class="libur-tag"><span class="live-dot" style="animation:none; box-shadow:none;"></span> LIBUR</span>`
-      : (r.isToday ? `<span class="today-badge"><span class="live-dot"></span> <span class="blink-text">LIVE TODAY</span></span>` : "");
+    const badges = [];
+    if(r.isToday){
+      badges.push(`
+        <span class="badge">
+          <span class="live-dot"></span>
+          <span class="blink-text">LIVE TODAY</span>
+        </span>
+      `);
+    }
+    if(r.isLibur){
+      badges.push(`
+        <span class="badge libur">
+          <span class="live-dot" style="animation:none; box-shadow:none;"></span>
+          LIBUR
+        </span>
+      `);
+    }
+
+    const showCopy = shouldShowCopyButton(r);
+    const copyBtnHtml = showCopy ? `
+      <button
+        class="copy-btn"
+        type="button"
+        data-action="copy"
+        data-date="${escapeHtml(dateLabel)}"
+        title="Copy gabungan tugas Lapangan + Operator"
+      >📋 Copy Tugas</button>
+    ` : (r.isToday && !r.isLibur ? `<div class="copy-hint">Copy muncul setelah <b>17:00 WITA</b></div>` : ``);
 
     return `
       <tr class="${rowClass}">
-        <td class="td-date">${escapeHtml(dateLabel)} ${badge}</td>
+        <td>
+          <div class="date-cell">
+            <span class="date-main">${escapeHtml(dateLabel)}</span>
+            <div class="date-sub">
+              ${badges.join("")}
+              ${copyBtnHtml}
+            </div>
+          </div>
+        </td>
         <td class="tasks">${escapeHtml(r.lapangan)}</td>
         <td class="tasks">${escapeHtml(r.operator)}</td>
-        <td class="td-date">${r.total ?? 0}</td>
+        <td class="date-cell">${r.total ?? 0}</td>
       </tr>
     `;
   }).join("");
@@ -790,9 +919,9 @@ function applyFilters(){
     return true;
   });
 
+  LAST_FILTERED = filtered;
   renderChips(filtered);
   renderTable(filtered);
-
   setStatus("ok", `Tampil: ${filtered.length} baris`);
 }
 
@@ -802,12 +931,28 @@ function setDefaultDateRange(){
   const first = dated[0].date;
   const last  = dated[dated.length-1].date;
 
-  // default: 60 hari terakhir (biar ringan di HP)
+  // default: 60 hari terakhir
   const from60 = new Date(last.getTime() - 59 * 86400000);
   const from = (from60.getTime() > first.getTime()) ? from60 : first;
 
   document.getElementById("dateFrom").value = fmtDateUTC(from);
   document.getElementById("dateTo").value   = fmtDateUTC(last);
+}
+
+/***********************
+ * UPDATE TODAY COPY VISIBILITY (auto show after 17:00)
+ ***********************/
+function refreshTodayCopyButtons(){
+  // re-render table hanya kalau ada data today di hasil filter (biar ringan)
+  if(!LAST_FILTERED || LAST_FILTERED.length === 0) return;
+  if(!LAST_FILTERED.some(r => r.isToday && !r.isLibur)) return;
+
+  // kalau sudah lewat 17:00, re-render sekali (supaya tombol muncul)
+  if(isAfter1700Wita()){
+    renderTable(LAST_FILTERED);
+  }else{
+    // sebelum 17:00, tidak perlu re-render berkali-kali (tapi aman kalau dipanggil)
+  }
 }
 
 /***********************
@@ -869,7 +1014,40 @@ function setupEvents(){
     }
   });
 
-  document.getElementById("btnSource").href = PUBLISHED_HTML_URL;
+  // delegasi klik tombol copy di tabel
+  document.getElementById("tbody").addEventListener("click", async (e) => {
+    const btn = e.target.closest('button[data-action="copy"]');
+    if(!btn) return;
+
+    const dateLabel = btn.getAttribute("data-date") || "-";
+    const row = (LAST_FILTERED || []).find(r => (r.date ? fmtDateUTC(r.date) : (r.tanggalRaw || "-")) === dateLabel)
+             || (RAW_ROWS || []).find(r => (r.date ? fmtDateUTC(r.date) : (r.tanggalRaw || "-")) === dateLabel);
+
+    if(!row){
+      alert("Data baris tidak ditemukan.");
+      return;
+    }
+
+    // rule: today harus >= 17:00 WITA
+    if(row.isToday && !isAfter1700Wita()){
+      alert("Tombol copy untuk hari ini muncul setelah jam 17:00 WITA.");
+      return;
+    }
+
+    const text = buildCopyText(row);
+    const ok = await copyTextToClipboard(text);
+
+    if(ok){
+      const old = btn.textContent;
+      btn.textContent = "✅ Copied";
+      setTimeout(() => btn.textContent = old, 900);
+    }else{
+      alert("Gagal copy. Coba update browser / gunakan Chrome.");
+    }
+  });
+
+  // cek tiap 30 detik supaya tombol hari ini otomatis muncul setelah 17:00 WITA
+  setInterval(refreshTodayCopyButtons, 30000);
 }
 
 /***********************
