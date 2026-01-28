@@ -738,6 +738,19 @@ footer{
   opacity:1;
   transform: translateY(0);
 }
+  .box{
+  opacity:0;
+  transform:translateY(20px);
+  transition:
+    opacity .6s ease,
+    transform .6s ease;
+}
+
+.box.in{
+  opacity:1;
+  transform:translateY(0);
+}
+
 </style>
 
 </head>
@@ -1467,10 +1480,30 @@ if (alurSection && alurLine && vFill) {
   alurObserver.observe(alurSection);
 }
 
+const previewBoxes = document.querySelectorAll(".preview .box");
+
+const boxObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(!entry.isIntersecting) return;
+
+    previewBoxes.forEach((box, i)=>{
+      setTimeout(()=>{
+        box.classList.add("in");
+      }, i * 180); // delay berurutan
+    });
+
+    boxObserver.disconnect(); // jalan sekali aja
+  });
+},{ threshold:0.4 });
+
+const previewCard = document.querySelector(".preview");
+if(previewCard) boxObserver.observe(previewCard);
+
 </script>
 
 </body>
 </html>
+
 
 
 
