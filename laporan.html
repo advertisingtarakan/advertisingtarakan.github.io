@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220" />
   <title>Laporan Kegiatan Harian</title>
 
   <!-- Chart.js -->
@@ -24,6 +25,7 @@
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
     *{ box-sizing:border-box; }
+    html, body{ height:100%; }
     body{
       margin:0;
       background: radial-gradient(1200px 700px at 20% 0%, rgba(122,167,255,.16), transparent 60%),
@@ -32,6 +34,7 @@
       color:var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       line-height:1.5;
+      -webkit-text-size-adjust: 100%;
     }
 
     header{
@@ -39,6 +42,7 @@
       top:0;
       z-index:20;
       backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       background: linear-gradient(to bottom, rgba(11,18,32,.92), rgba(11,18,32,.65));
       border-bottom:1px solid var(--line);
     }
@@ -49,9 +53,16 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:16px;
+      gap:12px;
+      flex-wrap:wrap;
     }
-    .brand{ display:flex; flex-direction:column; gap:2px; min-width:260px; }
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width:260px;
+      flex:1 1 280px;
+    }
     .brand h1{ margin:0; font-size:16px; letter-spacing:.3px; }
     .brand .sub{ font-size:12px; color:var(--muted); }
 
@@ -61,7 +72,9 @@
       gap:10px;
       flex-wrap:wrap;
       justify-content:flex-end;
+      flex:0 0 auto;
     }
+
     .btn{
       border:1px solid var(--line);
       background: rgba(255,255,255,.06);
@@ -70,16 +83,22 @@
       border-radius:12px;
       cursor:pointer;
       transition: transform .05s ease, background .2s ease, border-color .2s ease;
-      font-weight:600;
+      font-weight:700;
       font-size:13px;
       display:inline-flex;
       gap:8px;
       align-items:center;
       white-space:nowrap;
       text-decoration:none;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
     }
     .btn:hover{ background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.14); }
     .btn:active{ transform: translateY(1px); }
+    .btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
     .btn-primary{
       background: rgba(122,167,255,.18);
       border-color: rgba(122,167,255,.35);
@@ -150,21 +169,33 @@
     }
     @media (max-width: 980px){ .split{ grid-template-columns: 1fr; } }
 
+    /* table wrapper (biar di HP bisa swipe horizontal) */
+    .table-wrap{
+      width:100%;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius:14px;
+      border:1px solid var(--line);
+      margin-top:10px;
+      background: rgba(0,0,0,.06);
+    }
     table{
       width:100%;
       border-collapse: collapse;
-      margin-top:10px;
-      overflow:hidden;
-      border-radius: 14px;
-      border:1px solid var(--line);
+      min-width: 760px; /* penting untuk swipe di HP */
     }
     thead th{
+      position: sticky;
+      top: 0;
+      z-index: 1;
       text-align:left;
       font-size:12px;
       color:var(--muted);
       padding:10px;
       background: rgba(255,255,255,.05);
       border-bottom:1px solid var(--line);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
     tbody td{
       padding:10px;
@@ -176,14 +207,12 @@
     .td-date{ white-space:nowrap; font-family: var(--mono); font-size:12px; }
     .tasks{ white-space:pre-wrap; color:rgba(232,238,255,.9); }
 
-    /* ======= TODAY MARKER ======= */
+    /* TODAY */
     .today-row td{
       background: rgba(122,167,255,.12);
       border-bottom-color: rgba(122,167,255,.25);
     }
-    .today-row:hover td{
-      background: rgba(122,167,255,.16);
-    }
+    .today-row:hover td{ background: rgba(122,167,255,.16); }
     .today-badge{
       display:inline-flex;
       align-items:center;
@@ -193,7 +222,7 @@
       border:1px solid rgba(255,255,255,.18);
       background: rgba(0,0,0,.20);
       font-size:12px;
-      font-weight:800;
+      font-weight:900;
       letter-spacing:.4px;
       text-transform:uppercase;
       margin-left:10px;
@@ -203,23 +232,13 @@
       background: #ff2d2d;
       box-shadow: 0 0 0 4px rgba(255,45,45,.15);
       animation: pulse 1s infinite ease-in-out;
+      flex:0 0 auto;
     }
-    .blink-text{
-      animation: blink 1s infinite steps(1, end);
-    }
-    @keyframes blink{
-      0%, 49% { opacity: 1; }
-      50%, 100% { opacity: .25; }
-    }
-    @keyframes pulse{
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.2); opacity: .7; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    .today-sep td{
-      padding:0 !important;
-      border-bottom:1px solid rgba(255,255,255,.10);
-    }
+    .blink-text{ animation: blink 1s infinite steps(1, end); }
+    @keyframes blink{ 0%,49%{opacity:1} 50%,100%{opacity:.25} }
+    @keyframes pulse{ 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.2);opacity:.7} 100%{transform:scale(1);opacity:1} }
+
+    .today-sep td{ padding:0 !important; border-bottom:1px solid rgba(255,255,255,.10); }
     .today-sep .sep-inner{
       display:flex;
       align-items:center;
@@ -234,14 +253,12 @@
       text-transform:uppercase;
     }
 
-    /* ======= LIBUR (red background) ======= */
+    /* LIBUR */
     .libur-row td{
       background: rgba(255, 60, 60, .22);
       border-bottom-color: rgba(255, 90, 90, .35);
     }
-    .libur-row:hover td{
-      background: rgba(255, 60, 60, .28);
-    }
+    .libur-row:hover td{ background: rgba(255, 60, 60, .28); }
     .libur-tag{
       display:inline-flex;
       align-items:center;
@@ -263,7 +280,7 @@
       gap:8px;
       font-size:12px;
       color:var(--muted);
-      margin-top:8px;
+      margin-top:10px;
       flex-wrap:wrap;
     }
     .dot{
@@ -307,8 +324,16 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
+      min-width:0;
     }
-    .modal-title{ font-weight:700; font-size:14px; letter-spacing:.2px; }
+    .modal-title{
+      font-weight:800;
+      font-size:14px;
+      letter-spacing:.2px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
     .btn-close{
       border:1px solid var(--line);
       background: rgba(255,255,255,.06);
@@ -316,7 +341,7 @@
       border-radius:12px;
       padding:8px 10px;
       cursor:pointer;
-      font-weight:700;
+      font-weight:800;
     }
     .modal-body{
       flex:1;
@@ -335,6 +360,20 @@
       border:1px solid var(--line);
       background: rgba(255,255,255,.06);
       color: rgba(232,238,255,.92);
+    }
+
+    /* ====== MOBILE TUNING ====== */
+    @media (max-width: 600px){
+      .container{ padding:14px; }
+      .header-inner{ padding:12px 14px; }
+      .brand{ min-width:unset; flex: 1 1 100%; }
+      .top-actions{ width:100%; justify-content:stretch; }
+      .top-actions .btn{ flex:1 1 auto; justify-content:center; }
+      .controls{ grid-template-columns: 1fr; }
+      .controls .full{ grid-column:auto; }
+      .split{ gap:12px; }
+      .card{ padding:14px; }
+      .today-badge, .libur-tag{ margin-left:6px; }
     }
   </style>
 </head>
@@ -408,19 +447,21 @@
       <h2>Daftar Laporan (Hasil Filter)</h2>
       <div class="mini">Kolom: Tanggal (A4), Tugas Tim Lapangan (B4), Tugas Tim Operator (C4)</div>
 
-      <table>
-        <thead>
-          <tr>
-            <th style="width:160px;">Tanggal</th>
-            <th>Tugas Tim Lapangan</th>
-            <th>Tugas Tim Operator</th>
-            <th style="width:110px;">Total Task</th>
-          </tr>
-        </thead>
-        <tbody id="tbody">
-          <tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>
-        </tbody>
-      </table>
+      <div class="table-wrap" aria-label="Tabel laporan (scroll ke samping di HP)">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:160px;">Tanggal</th>
+              <th>Tugas Tim Lapangan</th>
+              <th>Tugas Tim Operator</th>
+              <th style="width:110px;">Total Task</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>
+          </tbody>
+        </table>
+      </div>
 
       <div class="status">
         <span class="dot" id="statusDot"></span>
@@ -458,15 +499,19 @@ const PUBLISHED_HTML_URL =
 
 const TARGET_SHEET_NAME = "Kegiatan";
 const KEUANGAN_PASSWORD = "AdvertisingJaya";
-
-// deteksi libur jika cell berisi salah satu keyword ini (case-insensitive)
 const LIBUR_KEYWORDS = ["libur", "off", "holiday", "cuti"];
+
+// network hardening
+const FETCH_TIMEOUT_MS = 12000; // 12 detik
+const FETCH_RETRIES = 3;        // total percobaan = 1 + retries
+const RETRY_BASE_DELAY_MS = 550;
 
 /***********************
  * STATE
  ***********************/
 let RAW_ROWS = []; // {date, lapangan, operator, total, tanggalRaw, isLibur, isToday}
 let chartTrend, chartTop, modalChart;
+let __loading = false;
 
 /***********************
  * UI
@@ -483,6 +528,58 @@ function escapeHtml(str){
     .replaceAll("&","&amp;")
     .replaceAll("<","&lt;")
     .replaceAll(">","&gt;");
+}
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/***********************
+ * FETCH (retry + timeout + backoff)
+ ***********************/
+async function fetchTextWithRetry(url, {timeoutMs=FETCH_TIMEOUT_MS, retries=FETCH_RETRIES} = {}){
+  let lastErr = null;
+
+  for(let attempt=0; attempt<=retries; attempt++){
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), timeoutMs);
+
+    // cache-bust biar gak kena cache aneh di mobile browser
+    const u = new URL(url);
+    u.searchParams.set("_ts", String(Date.now()));
+
+    try{
+      const res = await fetch(u.toString(), {
+        cache: "no-store",
+        signal: controller.signal,
+        headers: { "Accept": "text/plain,text/html,*/*" }
+      });
+
+      if(!res.ok){
+        // retry untuk 429 / 5xx
+        if((res.status === 429 || res.status >= 500) && attempt < retries){
+          const backoff = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+          await sleep(backoff);
+          continue;
+        }
+        throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      }
+
+      return await res.text();
+    }catch(err){
+      lastErr = err;
+      const isAbort = String(err?.name || "").toLowerCase().includes("abort");
+      const msg = isAbort ? "Timeout" : (err?.message || String(err));
+
+      // retry untuk jaringan putus/timeout
+      if(attempt < retries){
+        const backoff = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+        setStatus("", `Koneksi bermasalah (${msg}). Coba ulang... (${attempt+1}/${retries+1})`);
+        await sleep(backoff);
+        continue;
+      }
+    }finally{
+      clearTimeout(t);
+    }
+  }
+  throw lastErr || new Error("Gagal fetch (unknown error)");
 }
 
 /***********************
@@ -599,12 +696,8 @@ function parseCSV(text){
 }
 
 /***********************
- * LOAD: gid from pubhtml then CSV
+ * SHEET HELPERS
  ***********************/
-async function fetchText(url){
-  const res = await fetch(url, { cache:"no-store" });
-  return await res.text();
-}
 function getGidMapFromPubhtml(html){
   const doc = new DOMParser().parseFromString(html, "text/html");
   const links = [...doc.querySelectorAll('a[href*="gid="]')];
@@ -660,19 +753,14 @@ function extractRowsFromGrid(grid){
 
     const date = toDateFlexible(tanggalStr);
 
-    // LIBUR RULE:
-    // - jika total task 0 (kosong semua) => libur
-    // - atau jika ada keyword libur/off/cuti di salah satu kolom
     const combinedLower = (lap + " " + op).toLowerCase();
     const keywordLibur = LIBUR_KEYWORDS.some(k => combinedLower.includes(k));
     const totalCount = countTasks(lap) + countTasks(op);
     const isLibur = keywordLibur || totalCount === 0;
 
-    // kalau libur, tampilkan teks "LIBUR" otomatis
     const lapFinal = isLibur ? "LIBUR" : lap;
     const opFinal  = isLibur ? "LIBUR" : op;
     const totalFinal = isLibur ? 0 : totalCount;
-
     const isToday = date ? isSameDayUTC(date, tday) : false;
 
     out.push({
@@ -695,32 +783,48 @@ function finalizeRows(rows){
   });
   return rows;
 }
-async function loadRowsFromGoogleSheet(){
-  const mainHtml = await fetchText(PUBLISHED_HTML_URL);
+
+/***********************
+ * LOAD (robust)
+ ***********************/
+async function loadRows(){
+  // 1) ambil pubhtml untuk mapping gid
+  const mainHtml = await fetchTextWithRetry(PUBLISHED_HTML_URL);
   const gidMap = getGidMapFromPubhtml(mainHtml);
 
   let gid = gidMap.get(TARGET_SHEET_NAME.toLowerCase()) || "0";
   document.getElementById("debugGid").textContent = `gid: ${gid}`;
 
-  const url = pubCsvUrl(PUBLISHED_HTML_URL, gid);
-  const csvText = await fetchText(url);
-  const grid = parseCSV(csvText);
+  // 2) coba fetch CSV target gid
+  const primaryUrl = pubCsvUrl(PUBLISHED_HTML_URL, gid);
+  document.getElementById("debugSource").textContent = "source: csv";
 
+  let csvText = await fetchTextWithRetry(primaryUrl);
+  let grid = parseCSV(csvText);
+
+  // 3) fallback gid kalau grid kosong/aneh
   if(grid.length < 2){
     const fallbacks = ["0","1","2","3","4","5","6","7","8","9"];
     for(const g of fallbacks){
       if(g === gid) continue;
       const u2 = pubCsvUrl(PUBLISHED_HTML_URL, g);
-      const t2 = await fetchText(u2);
-      const g2 = parseCSV(t2);
-      if(g2.length >= 2){
-        gid = g;
-        document.getElementById("debugGid").textContent = `gid: ${gid}`;
-        return finalizeRows(extractRowsFromGrid(g2));
+      try{
+        const t2 = await fetchTextWithRetry(u2, {retries: 1, timeoutMs: 9000});
+        const g2 = parseCSV(t2);
+        if(g2.length >= 2){
+          gid = g;
+          document.getElementById("debugGid").textContent = `gid: ${gid}`;
+          grid = g2;
+          break;
+        }
+      }catch(_e){
+        // lanjut coba gid lain
       }
     }
   }
-  return finalizeRows(extractRowsFromGrid(grid));
+
+  const rows = finalizeRows(extractRowsFromGrid(grid));
+  return rows;
 }
 
 /***********************
@@ -766,7 +870,6 @@ function renderTable(filtered){
     return tb - ta;
   });
 
-  // Tambahkan "separator LIVE TODAY" tepat sebelum baris hari ini (kalau ada)
   const firstTodayIdx = sorted.findIndex(r => r.isToday);
   let html = "";
 
@@ -784,7 +887,7 @@ function renderTable(filtered){
     `;
   }
 
-  html += sorted.map((r, idx) => {
+  html += sorted.map((r) => {
     const dateLabel = r.date ? fmtDateUTC(r.date) : (r.tanggalRaw || "-");
 
     const rowClass = [
@@ -820,7 +923,6 @@ function aggregateForTrend(rows, mode){
     else if(mode === "yearly") key = yearKey(r.date);
     else key = fmtDateUTC(r.date);
 
-    // libur dihitung 0 task (sudah)
     map.set(key, (map.get(key) || 0) + (r.total || 0));
   }
   const labels = Array.from(map.keys()).sort();
@@ -831,7 +933,8 @@ function topBusyDays(rows, topN=10){
   const daily = new Map();
   for(const r of rows){
     if(!r.date) continue;
-    daily.set(fmtDateUTC(r.date), (daily.get(fmtDateUTC(r.date)) || 0) + (r.total || 0));
+    const k = fmtDateUTC(r.date);
+    daily.set(k, (daily.get(k) || 0) + (r.total || 0));
   }
   const pairs = Array.from(daily.entries())
     .map(([k,v])=>({k,v}))
@@ -842,7 +945,7 @@ function topBusyDays(rows, topN=10){
 
 function renderCharts(filtered){
   const mode = document.getElementById("mode").value;
-  const chartable = filtered.filter(r => r.date); // grafik butuh tanggal
+  const chartable = filtered.filter(r => r.date);
 
   const trend = aggregateForTrend(chartable, mode);
   if(chartTrend) chartTrend.destroy();
@@ -851,6 +954,7 @@ function renderCharts(filtered){
     data: { labels: trend.labels, datasets: [{ label: "Total Task", data: trend.values, tension: 0.25 }] },
     options: {
       responsive:true,
+      maintainAspectRatio:false,
       plugins:{ legend:{display:true}, tooltip:{enabled:true} },
       scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true } }
     }
@@ -863,6 +967,7 @@ function renderCharts(filtered){
     data: { labels: top.labels, datasets: [{ label: "Total Task", data: top.values }] },
     options: {
       responsive:true,
+      maintainAspectRatio:false,
       plugins:{ legend:{display:true}, tooltip:{enabled:true} },
       scales:{ x:{ ticks:{ maxRotation:60, autoSkip:false } }, y:{ beginAtZero:true } }
     }
@@ -937,44 +1042,21 @@ function closeModal(){
 }
 
 /***********************
- * LOAD
+ * LOAD ALL (guard + UX)
  ***********************/
 async function loadAll(){
+  if(__loading) return;
+  __loading = true;
+
+  const btnRefresh = document.getElementById("btnRefresh");
+  btnRefresh.disabled = true;
+
   try{
     setStatus("", "Memuat data dari Google Sheet…");
     document.getElementById("tbody").innerHTML =
       `<tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>`;
 
-    const mainHtml = await fetchText(PUBLISHED_HTML_URL);
-    const gidMap = (function(){
-      const doc = new DOMParser().parseFromString(mainHtml, "text/html");
-      const links = [...doc.querySelectorAll('a[href*="gid="]')];
-      const map = new Map();
-      for(const a of links){
-        const name = (a.textContent || "").trim();
-        const href = a.getAttribute("href") || "";
-        const m = href.match(/gid=(\d+)/);
-        if(!name || !m) continue;
-        map.set(name.toLowerCase(), m[1]);
-      }
-      return map;
-    })();
-
-    let gid = gidMap.get(TARGET_SHEET_NAME.toLowerCase()) || "0";
-    document.getElementById("debugGid").textContent = `gid: ${gid}`;
-
-    const url = (function(){
-      const base = PUBLISHED_HTML_URL.replace(/\/pubhtml(\?.*)?$/i, "/pub");
-      const p = new URLSearchParams();
-      p.set("gid", gid);
-      p.set("single", "true");
-      p.set("output", "csv");
-      return `${base}?${p.toString()}`;
-    })();
-
-    const csvText = await fetchText(url);
-    const grid = parseCSV(csvText);
-    const rows = finalizeRows(extractRowsFromGrid(grid));
+    const rows = await loadRows();
 
     RAW_ROWS = rows;
     if(!RAW_ROWS.length) throw new Error("Data kosong / tidak terbaca dari sheet.");
@@ -987,6 +1069,9 @@ async function loadAll(){
     setStatus("bad", `Gagal memuat data: ${e.message || String(e)}`);
     document.getElementById("tbody").innerHTML =
       `<tr><td colspan="4" class="muted" style="padding:14px;">Gagal memuat data: ${escapeHtml(e.message || String(e))}</td></tr>`;
+  }finally{
+    __loading = false;
+    btnRefresh.disabled = false;
   }
 }
 
@@ -998,6 +1083,7 @@ function setupEvents(){
   document.getElementById("mode").addEventListener("change", applyFilters);
   document.getElementById("dateFrom").addEventListener("change", applyFilters);
   document.getElementById("dateTo").addEventListener("change", applyFilters);
+
   document.getElementById("search").addEventListener("input", () => {
     clearTimeout(window.__t);
     window.__t = setTimeout(applyFilters, 180);
