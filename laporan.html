@@ -327,7 +327,9 @@
 </header>
 
 <div class="container">
-  <div class="card">
+
+  <!-- CARD 1: FILTER + RINGKASAN -->
+  <div class="card" style="margin-bottom:14px;">
     <h2>Filter</h2>
 
     <div class="controls">
@@ -349,41 +351,45 @@
       <button class="btn btn-primary" id="btnApply">Terapkan</button>
     </div>
 
+    <!-- Ringkasan (chips) -->
     <div class="chips" id="chips"></div>
+  </div>
 
-    <div style="margin-top:14px;">
-      <h2>Daftar Laporan (Hasil Filter)</h2>
-      <div class="mini">Kolom: Tanggal (A4), Tugas Tim Lapangan (B4), Tugas Tim Operator (C4)</div>
+  <!-- CARD 2: LAPORAN -->
+  <div class="card">
+    <h2>Daftar Laporan (Hasil Filter)</h2>
+    <div class="mini">Kolom: Tanggal (A4), Tugas Tim Lapangan (B4), Tugas Tim Operator (C4)</div>
 
-      <div class="table-wrap" aria-label="Tabel laporan (scroll ke samping di HP)">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:190px;">Tanggal</th>
-              <th>Tugas Tim Lapangan</th>
-              <th>Tugas Tim Operator</th>
-              <th style="width:110px;">Total Task</th>
-            </tr>
-          </thead>
-          <tbody id="tbody">
-            <tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="table-wrap" aria-label="Tabel laporan (scroll ke samping di HP)">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:190px;">Tanggal</th>
+            <th>Tugas Tim Lapangan</th>
+            <th>Tugas Tim Operator</th>
+            <th style="width:110px;">Total Task</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>
+        </tbody>
+      </table>
+    </div>
 
-      <div class="status">
-        <span class="dot" id="statusDot"></span>
-        <span id="statusText">Menyiapkan…</span>
-        <span class="pill" id="debugGid" title="gid sheet yang dipakai">gid: -</span>
-        <span class="pill" id="debugSource" title="endpoint data yang dipakai">source: csv</span>
-      </div>
+    <div class="status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Menyiapkan…</span>
+      <span class="pill" id="debugGid" title="gid sheet yang dipakai">gid: -</span>
+      <span class="pill" id="debugSource" title="endpoint data yang dipakai">source: csv</span>
     </div>
   </div>
 
   <div class="footer">
     © <span id="year"></span> • GitHub Pages One-Page • Data: Google Sheets
   </div>
+
 </div>
+
 
 <script>
 /***********************
