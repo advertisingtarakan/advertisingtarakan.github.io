@@ -123,51 +123,36 @@ const GITHUB = {
 };
 
 /* ================= KATEGORI ================= */
-const CATEGORIES = [
-  "neonbox",
-  "huruf-timbul",
-  "plang",
-  "spanduk",
-  "banner",
-  "stiker",
-  "cutting-sticker",
-  "akrilik",
-  "backdrop",
-  "billboard",
-  "signage",
-  "papan-nama",
-  "display",
-  "letter-sign",
-  "kaca-film",
-  "jasa-pasang-sticker",
-  "lainnya"
-];
-
-/* ================= STATE ================= */
-const state = { files: [] };
-
-/* ================= UTIL ================= */
-const $ = id => document.getElementById(id);
-const log = m => $("log").textContent += m + "\n";
-const today = () => new Date().toISOString().slice(0,10);
-const slug = s => s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-");
-const b64 = f => new Promise(r=>{
-  const fr=new FileReader();
-  fr.onload=()=>r(fr.result.split(",")[1]);
-  fr.readAsDataURL(f);
-});
+/* ================= CONFIG FILES ================= */
+const CONFIG_URL = "./gallery-config.json";
 
 /* ================= INIT ================= */
-(function initCategories(){
+async function loadConfig(){
+  const res = await fetch(CONFIG_URL, { cache: "no-store" });
+  if(!res.ok) throw new Error("Gagal load gallery-config.json");
+  return res.json();
+}
+
+async function initCategories(){
   const sel = $("category");
   sel.innerHTML = `<option value="">-- pilih kategori --</option>`;
-  CATEGORIES.forEach(c=>{
+
+  const cfg = await loadConfig();
+  const categories = Array.isArray(cfg.categories) ? cfg.categories : [];
+
+  categories.forEach(c=>{
     const o=document.createElement("option");
     o.value=c;
     o.textContent=c.replace(/-/g," ").toUpperCase();
     sel.appendChild(o);
   });
-})();
+}
+
+initCategories().catch(err=>{
+  console.error(err);
+  alert("Config kategori tidak bisa dibaca. Pastikan gallery-config.json ada.");
+});
+
 
 /* ================= GITHUB API ================= */
 async function ghPut(path, body){
@@ -322,3 +307,4 @@ $("uploadBtn").onclick = async ()=>{
 </script>
 </body>
 </html>
+
