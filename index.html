@@ -611,6 +611,13 @@ select:focus,input:focus,textarea:focus{border-color:rgba(109,169,255,.55)}
 }
 
 /* ===== FAQ (animated accordion) ===== */
+/* Biar antar FAQ nggak mepet */
+.faq{
+  display:grid;
+  gap:16px;              /* naikkan kalau mau lebih renggang: 18/20 */
+}
+
+/* Card */
 .qa{
   border:1px solid var(--line);
   border-radius:18px;
@@ -618,11 +625,11 @@ select:focus,input:focus,textarea:focus{border-color:rgba(109,169,255,.55)}
   overflow:hidden;
 }
 
-/* tombol pertanyaan */
+/* Header button */
 .qa button{
   width:100%;
   text-align:left;
-  padding:14px 14px;
+  padding:16px 16px;     /* sedikit lebih lega */
   background:transparent;
   border:none;
   color:var(--text);
@@ -636,42 +643,42 @@ select:focus,input:focus,textarea:focus{border-color:rgba(109,169,255,.55)}
 
 .qa button span{color:rgba(255,255,255,.90)}
 
-/* ikon chevron + animasinya */
+/* Icon */
 .chev{
-  width:34px;height:34px;border-radius:14px;
+  width:36px;height:36px;border-radius:14px;
   border:1px solid var(--line);
   display:grid;place-items:center;
   color:rgba(255,255,255,.75);
 
-  transition: transform .8s;
-  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transition: transform 500ms cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
 }
 .chev svg{width:18px;height:18px;opacity:.95}
 .qa.open .chev{transform:rotate(180deg)}
 
-/* konten jawaban (ANIMASI TINGGI) */
+/* Body: kita animasi HEIGHT pakai JS */
 .qa .a{
-  padding:0 14px;
+  height:0;              /* default tutup */
+  overflow:hidden;
+  opacity:0;
+
+  padding:0 16px;        /* padding samping tetap */
   color:var(--muted);
   font-size:13px;
   line-height:1.7;
 
-  max-height:0;          /* kunci: tertutup */
-  opacity:0;
-  overflow:hidden;
-
   transition:
-    max-height .8s,
-    opacity .35s;
-  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    height 520ms cubic-bezier(.2,.8,.2,1),
+    opacity 280ms ease;
+  will-change: height, opacity;
 }
 
-/* saat terbuka */
+/* Saat open: padding bawah muncul (lebih rapi) */
 .qa.open .a{
-  padding:0 14px 14px;
-  max-height:260px;      /* naikkan kalau jawaban lebih panjang */
   opacity:1;
+  padding-bottom:16px;
 }
+
 
 .chev{
   width:34px;height:34px;border-radius:14px;
@@ -1322,19 +1329,85 @@ const progObs = new IntersectionObserver((entries)=>{
 progObs.observe(pFill);
 
 /* ===== FAQ accordion ===== */
-document.querySelectorAll('.qa button').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const card = btn.closest('.qa');
+(() => {
+  const items = Array.from(document.querySelectorAll(".qa"));
+  if (!items.length) return;
 
-    // tutup semua yang lain
-    document.querySelectorAll('.qa.open').forEach(openCard=>{
-      if(openCard !== card) openCard.classList.remove('open');
+  function closeItem(item) {
+    const body = item.querySelector(".a");
+    if (!body) return;
+
+    // set height dari current -> 0 supaya transisinya halus
+    body.style.height = body.scrollHeight + "px";
+    body.offsetHeight; // force reflow
+    body.style.height = "0px";
+    item.classList.remove("open");
+  }
+
+  function openItem(item) {
+    const body = item.querySelector(".a");
+    if (!body) return;
+
+    item.classList.add("open");
+    // reset dulu biar dapat tinggi natural
+    body.style.height = "auto";
+    const target = body.scrollHeight;
+
+    // dari 0 -> target
+    body.style.height = "0px";
+    body.offsetHeight; // force reflow
+    body.style.height = target + "px";
+  }
+
+  // setelah selesai animasi open, kunci ke auto supaya kalau kontennya berubah tetap aman
+  items.forEach(item => {
+    const body = item.querySelector(".a");
+    if (!body) return;
+
+    body.addEventListener("transitionend", (e) => {
+      if (e.propertyName !== "height") return;
+      if (item.classList.contains("open")) {
+        body.style.height = "auto";
+      }
     });
-
-    // toggle yang diklik
-    card.classList.toggle('open');
   });
-});
+
+  // Click handler (single open)
+  items.forEach(item => {
+    const btn = item.querySelector("button");
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+      const isOpen = item.classList.contains("open");
+
+      // tutup semua dulu
+      items.forEach(other => {
+        if (other !== item && other.classList.contains("open")) closeItem(other);
+      });
+
+      // toggle item ini
+      if (isOpen) closeItem(item);
+      else openItem(item);
+    });
+  });
+
+  // Kalau resize, item yang sedang open disesuaikan tinggi-nya
+  window.addEventListener("resize", () => {
+    items.forEach(item => {
+      if (!item.classList.contains("open")) return;
+      const body = item.querySelector(".a");
+      if (!body) return;
+      body.style.height = "auto";
+      const target = body.scrollHeight;
+      body.style.height = target + "px";
+      // biar balik auto setelah transisi
+      setTimeout(() => {
+        if (item.classList.contains("open")) body.style.height = "auto";
+      }, 550);
+    });
+  });
+})();
+
 
 
 
@@ -1595,6 +1668,7 @@ if(previewCard) boxObserver.observe(previewCard);
 
 </body>
 </html>
+
 
 
 
