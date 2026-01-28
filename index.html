@@ -1084,18 +1084,19 @@ footer{
 
    <div class="controls">
   <select id="cat"></select>
-  <input id="search" placeholder="Cari dokumentasi...">
+  <input id="search" placeholder="Cari dokumentasi.">
   <div id="count" style="align-self:center;font-size:12px;color:var(--muted)">0 item</div>
 </div>
 
-<!-- tombol muncul hanya kalau kategori > 8 -->
+<!-- muncul hanya kalau hasil > 8 -->
 <div style="margin:10px 0 0; display:flex; justify-content:flex-end;">
-  <a id="btnMoreCats" class="btn" href="./gallery" style="display:none;">
+  <a id="btnMoreItems" class="btn" href="./gallery" style="display:none;">
     Lihat selengkapnya
   </a>
 </div>
 
 <div id="grid" class="grid"></div>
+
 
 </section>
 
@@ -1410,16 +1411,17 @@ progObs.observe(pFill);
 
 
 
-/* ===== GALLERY (config + manifest) ===== */
+/* ===== GALLERY (config categories + limit display 8 items) ===== */
 const CONFIG_URL = "./gallery-config.json";
 const MANIFEST_URL = "./gallery-manifest.json";
+const DISPLAY_LIMIT = 8;
 
 const catSel = document.getElementById("cat");
-const btnMoreCats = document.getElementById("btnMoreCats");
+const btnMoreItems = document.getElementById("btnMoreItems");
 
 let DATA = [];
 let CATEGORIES = [];
-let INDEX_MAX = 8;
+let indexMaxCategories = 8; // hanya untuk aturan link/opsional, bukan limit item
 
 async function fetchJSON(url){
   const r = await fetch(url, { cache: "no-store" });
@@ -1428,17 +1430,21 @@ async function fetchJSON(url){
 }
 
 function buildCategorySelect(){
-  // hanya tampil max 8 kategori di INDEX
-  const shown = CATEGORIES.slice(0, INDEX_MAX);
-
+  // FILTER harus tampil SEMUA kategori
   catSel.innerHTML =
     '<option value="all">Semua Kategori</option>' +
-    shown.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+    CATEGORIES.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+}
 
-  // tombol lihat selengkapnya kalau kategori > 8
-  if (btnMoreCats){
-    btnMoreCats.style.display = (CATEGORIES.length > INDEX_MAX) ? "inline-flex" : "none";
-  }
+function buildMoreLink(categoryValue, searchValue){
+  // Link ke ./gallery sambil bawa filter
+  // (kalau gallery kamu belum dukung query param, link tetap aman)
+  const params = new URLSearchParams();
+  if(categoryValue && categoryValue !== "all") params.set("cat", categoryValue);
+  if(searchValue && searchValue.trim()) params.set("q", searchValue.trim());
+
+  const url = "./gallery" + (params.toString() ? ("?" + params.toString()) : "");
+  if(btnMoreItems) btnMoreItems.href = url;
 }
 
 async function initGallery(){
@@ -1449,7 +1455,7 @@ async function initGallery(){
     ]);
 
     CATEGORIES = Array.isArray(cfg.categories) ? cfg.categories : [];
-    INDEX_MAX = Number(cfg.indexMaxCategories || 8);
+    indexMaxCategories = Number(cfg.indexMaxCategories || 8); // tidak dipakai buat limit display
 
     DATA = Array.isArray(manifest.items) ? manifest.items : [];
 
@@ -1467,14 +1473,20 @@ function render(){
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
 
-  const f = DATA.filter(i =>
+  // 1) hasil filter full (untuk hitung total)
+  const filtered = DATA.filter(i =>
     (c === "all" || i.category === c) &&
     String(i.title || "").toLowerCase().includes(q)
   );
 
-  document.getElementById("count").textContent = f.length + " item";
+  // 2) hanya tampilkan max 8 di INDEX
+  const shown = filtered.slice(0, DISPLAY_LIMIT);
 
-  f.forEach(i=>{
+  // count tetap total hasil (bukan yang ditampilkan)
+  document.getElementById("count").textContent = filtered.length + " item";
+
+  // 3) render hanya yang shown
+  shown.forEach(i=>{
     const d = document.createElement("div");
     d.className = "gcard";
     d.innerHTML = `<img loading="lazy" src="./${i.file}" alt="${escapeHtml(i.title||'Dokumentasi')}">
@@ -1486,13 +1498,23 @@ function render(){
     d.onclick = ()=>openModal(i.file);
     grid.appendChild(d);
   });
+
+  // 4) tombol "Lihat selengkapnya" muncul kalau total > 8
+  if(btnMoreItems){
+    const showMore = filtered.length > DISPLAY_LIMIT;
+    btnMoreItems.style.display = showMore ? "inline-flex" : "none";
+    if(showMore){
+      buildMoreLink(c, document.getElementById("search").value);
+    }
+  }
 }
 
 document.getElementById("search").addEventListener("input", render);
 catSel.addEventListener("change", render);
 
-// jalanin
+// start
 initGallery();
+
 
 
 function escapeHtml(str){
@@ -1718,6 +1740,7 @@ if(previewCard) boxObserver.observe(previewCard);
 
 </body>
 </html>
+
 
 
 
