@@ -6,9 +6,6 @@
   <meta name="theme-color" content="#0b1220" />
   <title>Laporan Kegiatan Harian</title>
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
   <style>
     :root{
       --bg:#0b1220;
@@ -95,10 +92,7 @@
     }
     .btn:hover{ background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.14); }
     .btn:active{ transform: translateY(1px); }
-    .btn:disabled{
-      opacity:.55;
-      cursor:not-allowed;
-    }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; }
     .btn-primary{
       background: rgba(122,167,255,.18);
       border-color: rgba(122,167,255,.35);
@@ -109,7 +103,6 @@
     }
 
     .container{ max-width:1200px; margin:0 auto; padding:24px; }
-
     .card{
       background: linear-gradient(to bottom right, rgba(255,255,255,.06), rgba(255,255,255,.03));
       border:1px solid var(--line);
@@ -161,15 +154,6 @@
     }
     .chip b{ font-family: var(--mono); font-size:12px; }
 
-    .split{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:16px;
-      margin-top:12px;
-    }
-    @media (max-width: 980px){ .split{ grid-template-columns: 1fr; } }
-
-    /* table wrapper (biar di HP bisa swipe horizontal) */
     .table-wrap{
       width:100%;
       overflow:auto;
@@ -182,7 +166,7 @@
     table{
       width:100%;
       border-collapse: collapse;
-      min-width: 760px; /* penting untuk swipe di HP */
+      min-width: 760px; /* biar bisa swipe di HP */
     }
     thead th{
       position: sticky;
@@ -207,7 +191,6 @@
     .td-date{ white-space:nowrap; font-family: var(--mono); font-size:12px; }
     .tasks{ white-space:pre-wrap; color:rgba(232,238,255,.9); }
 
-    /* TODAY */
     .today-row td{
       background: rgba(122,167,255,.12);
       border-bottom-color: rgba(122,167,255,.25);
@@ -253,7 +236,6 @@
       text-transform:uppercase;
     }
 
-    /* LIBUR */
     .libur-row td{
       background: rgba(255, 60, 60, .22);
       border-bottom-color: rgba(255, 90, 90, .35);
@@ -293,66 +275,6 @@
 
     .footer{ margin-top:18px; color:var(--muted); font-size:12px; text-align:center; opacity:.9; }
 
-    /* Modal full-screen chart */
-    .modal{
-      position:fixed;
-      inset:0;
-      background: rgba(0,0,0,.72);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      z-index:9999;
-      padding:18px;
-    }
-    .modal.open{ display:flex; }
-    .modal-card{
-      width:min(1100px, 98vw);
-      height:min(720px, 92vh);
-      background: linear-gradient(to bottom right, rgba(255,255,255,.08), rgba(255,255,255,.04));
-      border:1px solid var(--line);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      padding:14px;
-      position:relative;
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .modal-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      min-width:0;
-    }
-    .modal-title{
-      font-weight:800;
-      font-size:14px;
-      letter-spacing:.2px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-    .btn-close{
-      border:1px solid var(--line);
-      background: rgba(255,255,255,.06);
-      color:var(--text);
-      border-radius:12px;
-      padding:8px 10px;
-      cursor:pointer;
-      font-weight:800;
-    }
-    .modal-body{
-      flex:1;
-      min-height:0;
-      background: rgba(0,0,0,.18);
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:10px;
-    }
-    .modal-body canvas{ width:100% !important; height:100% !important; }
-    .clickable{ cursor: zoom-in; }
     .pill{
       font-family: var(--mono);
       padding:3px 8px;
@@ -362,7 +284,6 @@
       color: rgba(232,238,255,.92);
     }
 
-    /* ====== MOBILE TUNING ====== */
     @media (max-width: 600px){
       .container{ padding:14px; }
       .header-inner{ padding:12px 14px; }
@@ -371,7 +292,6 @@
       .top-actions .btn{ flex:1 1 auto; justify-content:center; }
       .controls{ grid-template-columns: 1fr; }
       .controls .full{ grid-column:auto; }
-      .split{ gap:12px; }
       .card{ padding:14px; }
       .today-badge, .libur-tag{ margin-left:6px; }
     }
@@ -383,7 +303,7 @@
   <div class="header-inner">
     <div class="brand">
       <h1>Display Laporan Kegiatan Harian</h1>
-      <div class="sub">Sumber: Google Sheet (tab <b>Kegiatan</b>) • Filter & grafik mingguan / bulanan / tahunan</div>
+      <div class="sub">Sumber: Google Sheet (tab <b>Kegiatan</b>) • Filter & tabel responsif</div>
     </div>
 
     <div class="top-actions">
@@ -396,19 +316,9 @@
 
 <div class="container">
   <div class="card">
-    <h2>Ringkasan & Grafik</h2>
+    <h2>Filter</h2>
 
     <div class="controls">
-      <div>
-        <label for="mode">Mode Grafik</label>
-        <select id="mode">
-          <option value="daily">Harian</option>
-          <option value="weekly" selected>Mingguan</option>
-          <option value="monthly">Bulanan</option>
-          <option value="yearly">Tahunan</option>
-        </select>
-      </div>
-
       <div>
         <label for="dateFrom">Dari Tanggal</label>
         <input id="dateFrom" type="date" />
@@ -428,20 +338,6 @@
     </div>
 
     <div class="chips" id="chips"></div>
-
-    <div class="split">
-      <div class="card" style="padding:12px;">
-        <h2 style="margin-bottom:6px;">Grafik Aktivitas (Total Task)</h2>
-        <div class="mini">Klik grafik untuk mode layar penuh</div>
-        <canvas id="chartTrend" class="clickable" height="150"></canvas>
-      </div>
-
-      <div class="card" style="padding:12px;">
-        <h2 style="margin-bottom:6px;">Top Hari Tersibuk</h2>
-        <div class="mini">Urutan berdasarkan jumlah task gabungan</div>
-        <canvas id="chartTopBusy" class="clickable" height="150"></canvas>
-      </div>
-    </div>
 
     <div style="margin-top:14px;">
       <h2>Daftar Laporan (Hasil Filter)</h2>
@@ -477,19 +373,6 @@
   </div>
 </div>
 
-<!-- MODAL FULLSCREEN -->
-<div class="modal" id="modal">
-  <div class="modal-card">
-    <div class="modal-head">
-      <div class="modal-title" id="modalTitle">Grafik</div>
-      <button class="btn-close" id="modalClose">✕ Close</button>
-    </div>
-    <div class="modal-body">
-      <canvas id="modalCanvas"></canvas>
-    </div>
-  </div>
-</div>
-
 <script>
 /***********************
  * CONFIG
@@ -502,7 +385,7 @@ const KEUANGAN_PASSWORD = "AdvertisingJaya";
 const LIBUR_KEYWORDS = ["libur", "off", "holiday", "cuti"];
 
 // network hardening
-const FETCH_TIMEOUT_MS = 12000; // 12 detik
+const FETCH_TIMEOUT_MS = 12000;
 const FETCH_RETRIES = 3;        // total percobaan = 1 + retries
 const RETRY_BASE_DELAY_MS = 550;
 
@@ -510,7 +393,6 @@ const RETRY_BASE_DELAY_MS = 550;
  * STATE
  ***********************/
 let RAW_ROWS = []; // {date, lapangan, operator, total, tanggalRaw, isLibur, isToday}
-let chartTrend, chartTop, modalChart;
 let __loading = false;
 
 /***********************
@@ -541,9 +423,8 @@ async function fetchTextWithRetry(url, {timeoutMs=FETCH_TIMEOUT_MS, retries=FETC
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), timeoutMs);
 
-    // cache-bust biar gak kena cache aneh di mobile browser
     const u = new URL(url);
-    u.searchParams.set("_ts", String(Date.now()));
+    u.searchParams.set("_ts", String(Date.now())); // cache-bust
 
     try{
       const res = await fetch(u.toString(), {
@@ -553,7 +434,6 @@ async function fetchTextWithRetry(url, {timeoutMs=FETCH_TIMEOUT_MS, retries=FETC
       });
 
       if(!res.ok){
-        // retry untuk 429 / 5xx
         if((res.status === 429 || res.status >= 500) && attempt < retries){
           const backoff = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
           await sleep(backoff);
@@ -561,14 +441,12 @@ async function fetchTextWithRetry(url, {timeoutMs=FETCH_TIMEOUT_MS, retries=FETC
         }
         throw new Error(`HTTP ${res.status} ${res.statusText}`);
       }
-
       return await res.text();
     }catch(err){
       lastErr = err;
       const isAbort = String(err?.name || "").toLowerCase().includes("abort");
       const msg = isAbort ? "Timeout" : (err?.message || String(err));
 
-      // retry untuk jaringan putus/timeout
       if(attempt < retries){
         const backoff = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
         setStatus("", `Koneksi bermasalah (${msg}). Coba ulang... (${attempt+1}/${retries+1})`);
@@ -627,16 +505,6 @@ function within(d, from, to){
   if(to && t > to.getTime()) return false;
   return true;
 }
-function isoWeekKey(d){
-  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  const day = date.getUTCDay() || 7;
-  date.setUTCDate(date.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-  return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2,"0")}`;
-}
-function monthKey(d){ return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`; }
-function yearKey(d){ return String(d.getUTCFullYear()); }
 function todayUTC(){
   const now = new Date();
   return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
@@ -720,6 +588,7 @@ function pubCsvUrl(pubhtml, gid){
   return `${base}?${p.toString()}`;
 }
 function extractRowsFromGrid(grid){
+  // cari header
   let headerRow = -1;
   for(let i=0;i<grid.length;i++){
     const row = grid[i].map(x=>String(x||"").toLowerCase().trim());
@@ -758,30 +627,22 @@ function extractRowsFromGrid(grid){
     const totalCount = countTasks(lap) + countTasks(op);
     const isLibur = keywordLibur || totalCount === 0;
 
-    const lapFinal = isLibur ? "LIBUR" : lap;
-    const opFinal  = isLibur ? "LIBUR" : op;
-    const totalFinal = isLibur ? 0 : totalCount;
-    const isToday = date ? isSameDayUTC(date, tday) : false;
-
     out.push({
       date,
-      lapangan: lapFinal,
-      operator: opFinal,
-      total: totalFinal,
+      lapangan: isLibur ? "LIBUR" : lap,
+      operator: isLibur ? "LIBUR" : op,
+      total: isLibur ? 0 : totalCount,
       tanggalRaw: tanggalStr,
       isLibur,
-      isToday
+      isToday: date ? isSameDayUTC(date, tday) : false
     });
   }
-  return out;
-}
-function finalizeRows(rows){
-  rows.sort((a,b)=>{
+  out.sort((a,b)=>{
     const ta = a.date ? a.date.getTime() : -Infinity;
     const tb = b.date ? b.date.getTime() : -Infinity;
     return ta - tb;
   });
-  return rows;
+  return out;
 }
 
 /***********************
@@ -823,8 +684,7 @@ async function loadRows(){
     }
   }
 
-  const rows = finalizeRows(extractRowsFromGrid(grid));
-  return rows;
+  return extractRowsFromGrid(grid);
 }
 
 /***********************
@@ -864,6 +724,7 @@ function renderTable(filtered){
     return;
   }
 
+  // tampilkan terbaru di atas
   const sorted = filtered.slice().sort((a,b)=>{
     const ta = a.date ? a.date.getTime() : -Infinity;
     const tb = b.date ? b.date.getTime() : -Infinity;
@@ -889,11 +750,7 @@ function renderTable(filtered){
 
   html += sorted.map((r) => {
     const dateLabel = r.date ? fmtDateUTC(r.date) : (r.tanggalRaw || "-");
-
-    const rowClass = [
-      r.isLibur ? "libur-row" : "",
-      r.isToday ? "today-row" : ""
-    ].filter(Boolean).join(" ");
+    const rowClass = [r.isLibur ? "libur-row" : "", r.isToday ? "today-row" : ""].filter(Boolean).join(" ");
 
     const badge = r.isLibur
       ? `<span class="libur-tag"><span class="live-dot" style="animation:none; box-shadow:none;"></span> LIBUR</span>`
@@ -912,73 +769,10 @@ function renderTable(filtered){
   tbody.innerHTML = html;
 }
 
-function aggregateForTrend(rows, mode){
-  const map = new Map();
-  for(const r of rows){
-    if(!r.date) continue;
-    let key;
-    if(mode === "daily") key = fmtDateUTC(r.date);
-    else if(mode === "weekly") key = isoWeekKey(r.date);
-    else if(mode === "monthly") key = monthKey(r.date);
-    else if(mode === "yearly") key = yearKey(r.date);
-    else key = fmtDateUTC(r.date);
-
-    map.set(key, (map.get(key) || 0) + (r.total || 0));
-  }
-  const labels = Array.from(map.keys()).sort();
-  return { labels, values: labels.map(l => map.get(l)) };
-}
-
-function topBusyDays(rows, topN=10){
-  const daily = new Map();
-  for(const r of rows){
-    if(!r.date) continue;
-    const k = fmtDateUTC(r.date);
-    daily.set(k, (daily.get(k) || 0) + (r.total || 0));
-  }
-  const pairs = Array.from(daily.entries())
-    .map(([k,v])=>({k,v}))
-    .sort((a,b)=> b.v - a.v)
-    .slice(0, topN);
-  return { labels: pairs.map(p=>p.k), values: pairs.map(p=>p.v) };
-}
-
-function renderCharts(filtered){
-  const mode = document.getElementById("mode").value;
-  const chartable = filtered.filter(r => r.date);
-
-  const trend = aggregateForTrend(chartable, mode);
-  if(chartTrend) chartTrend.destroy();
-  chartTrend = new Chart(document.getElementById("chartTrend"), {
-    type: "line",
-    data: { labels: trend.labels, datasets: [{ label: "Total Task", data: trend.values, tension: 0.25 }] },
-    options: {
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{ legend:{display:true}, tooltip:{enabled:true} },
-      scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true } }
-    }
-  });
-
-  const top = topBusyDays(chartable, 10);
-  if(chartTop) chartTop.destroy();
-  chartTop = new Chart(document.getElementById("chartTopBusy"), {
-    type: "bar",
-    data: { labels: top.labels, datasets: [{ label: "Total Task", data: top.values }] },
-    options: {
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{ legend:{display:true}, tooltip:{enabled:true} },
-      scales:{ x:{ ticks:{ maxRotation:60, autoSkip:false } }, y:{ beginAtZero:true } }
-    }
-  });
-}
-
 /***********************
  * FILTER
  ***********************/
 function applyFilters(){
-  const mode = document.getElementById("mode").value;
   const fromVal = document.getElementById("dateFrom").value;
   const toVal = document.getElementById("dateTo").value;
   const q = document.getElementById("search").value.trim().toLowerCase();
@@ -997,11 +791,9 @@ function applyFilters(){
   });
 
   renderChips(filtered);
-  renderCharts(filtered);
   renderTable(filtered);
 
-  const modeName = ({daily:"Harian", weekly:"Mingguan", monthly:"Bulanan", yearly:"Tahunan"})[mode] || mode;
-  setStatus("ok", `Tampil: ${filtered.length} baris • Mode grafik: ${modeName}`);
+  setStatus("ok", `Tampil: ${filtered.length} baris`);
 }
 
 function setDefaultDateRange(){
@@ -1010,6 +802,7 @@ function setDefaultDateRange(){
   const first = dated[0].date;
   const last  = dated[dated.length-1].date;
 
+  // default: 60 hari terakhir (biar ringan di HP)
   const from60 = new Date(last.getTime() - 59 * 86400000);
   const from = (from60.getTime() > first.getTime()) ? from60 : first;
 
@@ -1018,31 +811,7 @@ function setDefaultDateRange(){
 }
 
 /***********************
- * MODAL FULLSCREEN
- ***********************/
-function openModalChart(title, srcChart){
-  const modal = document.getElementById("modal");
-  document.getElementById("modalTitle").textContent = title;
-
-  const cfg = {
-    type: srcChart.config.type,
-    data: JSON.parse(JSON.stringify(srcChart.data)),
-    options: JSON.parse(JSON.stringify(srcChart.options))
-  };
-  cfg.options.maintainAspectRatio = false;
-
-  if(modalChart) modalChart.destroy();
-  modal.classList.add("open");
-  modalChart = new Chart(document.getElementById("modalCanvas"), cfg);
-}
-function closeModal(){
-  const modal = document.getElementById("modal");
-  modal.classList.remove("open");
-  if(modalChart){ modalChart.destroy(); modalChart = null; }
-}
-
-/***********************
- * LOAD ALL (guard + UX)
+ * LOAD ALL
  ***********************/
 async function loadAll(){
   if(__loading) return;
@@ -1057,8 +826,8 @@ async function loadAll(){
       `<tr><td colspan="4" class="muted" style="padding:14px;">Memuat data…</td></tr>`;
 
     const rows = await loadRows();
-
     RAW_ROWS = rows;
+
     if(!RAW_ROWS.length) throw new Error("Data kosong / tidak terbaca dari sheet.");
 
     setDefaultDateRange();
@@ -1080,7 +849,6 @@ async function loadAll(){
  ***********************/
 function setupEvents(){
   document.getElementById("btnApply").addEventListener("click", applyFilters);
-  document.getElementById("mode").addEventListener("change", applyFilters);
   document.getElementById("dateFrom").addEventListener("change", applyFilters);
   document.getElementById("dateTo").addEventListener("change", applyFilters);
 
@@ -1102,21 +870,6 @@ function setupEvents(){
   });
 
   document.getElementById("btnSource").href = PUBLISHED_HTML_URL;
-
-  document.getElementById("modalClose").addEventListener("click", closeModal);
-  document.getElementById("modal").addEventListener("click", (e) => {
-    if(e.target.id === "modal") closeModal();
-  });
-  window.addEventListener("keydown", (e) => {
-    if(e.key === "Escape") closeModal();
-  });
-
-  document.getElementById("chartTrend").addEventListener("click", () => {
-    if(chartTrend) openModalChart("Grafik Aktivitas (Total Task)", chartTrend);
-  });
-  document.getElementById("chartTopBusy").addEventListener("click", () => {
-    if(chartTop) openModalChart("Top Hari Tersibuk", chartTop);
-  });
 }
 
 /***********************
