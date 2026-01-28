@@ -191,6 +191,18 @@ section{padding:88px 0}
   display:block;       /* hilangin gap bawah img */
 }
 
+  .preview .box{
+  opacity:0;
+  transform:translateY(20px);
+  transition: opacity .6s ease, transform .6s ease;
+  will-change: opacity, transform;
+}
+
+.preview .box.in{
+  opacity:1;
+  transform:translateY(0);
+}
+
 
 .hero{
   min-height:100vh;
@@ -1499,10 +1511,53 @@ const boxObserver = new IntersectionObserver((entries)=>{
 const previewCard = document.querySelector(".preview");
 if(previewCard) boxObserver.observe(previewCard);
 
+
+  /// baruuu
+  (() => {
+  const preview = document.querySelector(".preview");
+  const boxes = Array.from(document.querySelectorAll(".preview .box"));
+  if (!preview || boxes.length === 0) return;
+
+  const STEP_DELAY = 540; // 3x lebih lambat dari 180ms
+  let timers = [];
+
+  function clearTimers() {
+    timers.forEach(t => clearTimeout(t));
+    timers = [];
+  }
+
+  function playIn() {
+    clearTimers();
+    boxes.forEach((box, i) => {
+      // reset dulu biar replay selalu konsisten
+      box.classList.remove("in");
+      timers.push(setTimeout(() => box.classList.add("in"), i * STEP_DELAY));
+    });
+  }
+
+  function resetOut() {
+    clearTimers();
+    // hapus class saat keluar viewport -> nanti masuk lagi akan replay
+    boxes.forEach(box => box.classList.remove("in"));
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) playIn();
+      else resetOut();
+    });
+  }, {
+    threshold: 0.35,
+    rootMargin: "0px 0px -10% 0px"
+  });
+
+  io.observe(preview);
+})();
 </script>
 
 </body>
 </html>
+
 
 
 
