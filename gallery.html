@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Galeri</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, Arial, sans-serif;
+      background: #0b0f1a;
+      color: #fff;
+    }
+
+    header {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      position: sticky;
+      top: 0;
+      background: #0b0f1a;
+      z-index: 10;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+    }
+
+    p {
+      margin: 0;
+      color: #b8c0ff;
+      font-size: 14px;
+    }
+
+    .controls {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 200px 1fr auto;
+      gap: 10px;
+    }
+
+    @media (max-width: 700px) {
+      .controls {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    select, input {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.15);
+      background: #12172a;
+      color: #fff;
+      outline: none;
+    }
+
+    .count {
+      font-size: 13px;
+      color: #aaa;
+      align-self: center;
+      text-align: right;
+    }
+
+    main {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    @media (max-width: 1000px) {
+      .grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 700px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 420px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #12172a;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .2s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+    }
+
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .meta {
+      padding: 10px;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      margin-right: 6px;
+      display: inline-block;
+    }
+
+    .title {
+      margin-top: 6px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal img {
+      max-width: none;
+      max-height: none;
+      cursor: grab;
+      transform: translate(-50%, -50%) scale(1);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+    }
+
+    .close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #000;
+      border: 1px solid rgba(255,255,255,.2);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>Galeri Dokumentasi</h1>
+  <p>Menampilkan semua gambar (tanpa batas)</p>
+
+  <div class="controls">
+    <select id="category"></select>
+    <input id="search" placeholder="Cari dokumentasi...">
+    <div id="count" class="count">0 item</div>
+  </div>
+</header>
+
+<main>
+  <div id="grid" class="grid"></div>
+</main>
+
+<div id="modal" class="modal">
+  <button class="close" onclick="closeModal()">✕</button>
+  <img id="modalImg">
+</div>
+
+<script>
+  const CONFIG_URL = "gallery-config.json";
+  const MANIFEST_URL = "gallery-manifest.json";
+
+  const grid = document.getElementById("grid");
+  const categorySelect = document.getElementById("category");
+  const searchInput = document.getElementById("search");
+  const countEl = document.getElementById("count");
+
+  let items = [];
+  let categories = [];
+
+  async function loadJSON(url) {
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  function buildCategories() {
+    categorySelect.innerHTML =
+      '<option value="all">Semua Kategori</option>' +
+      categories.map(c => `<option value="${c}">${c}</option>`).join("");
+  }
+
+  function render() {
+    const q = searchInput.value.toLowerCase();
+    const c = categorySelect.value;
+
+    const filtered = items.filter(i =>
+      (c === "all" || i.category === c) &&
+      (i.title || "").toLowerCase().includes(q)
+    );
+
+    grid.innerHTML = "";
+    countEl.textContent = filtered.length + " item";
+
+    filtered.forEach(i => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <img src="${i.file}" loading="lazy">
+        <div class="meta">
+          <span class="badge">${i.category || "-"}</span>
+          <span class="badge">${i.date || "-"}</span>
+          <div class="title">${i.title || "Untitled"}</div>
+        </div>
+      `;
+      div.onclick = () => openModal(i.file);
+      grid.appendChild(div);
+    });
+  }
+
+  async function init() {
+    const cfg = await loadJSON(CONFIG_URL);
+    const manifest = await loadJSON(MANIFEST_URL);
+
+    categories = cfg.categories || [];
+    items = manifest.items || [];
+
+    buildCategories();
+    render();
+  }
+
+  searchInput.addEventListener("input", render);
+  categorySelect.addEventListener("change", render);
+
+  init();
+
+  /* Modal zoom */
+  let scale = 1, dx = 0, dy = 0;
+
+  function openModal(src) {
+    const modal = document.getElementById("modal");
+    const img = document.getElementById("modalImg");
+    img.src = src;
+    scale = 1; dx = 0; dy = 0;
+    applyTransform();
+    modal.classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("modal").classList.remove("open");
+  }
+
+  function applyTransform() {
+    modalImg.style.transform =
+      `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${scale})`;
+  }
+
+  modalImg.addEventListener("wheel", e => {
+    e.preventDefault();
+    scale += e.deltaY * -0.001;
+    scale = Math.min(Math.max(scale, 0.5), 5);
+    applyTransform();
+  });
+
+  let dragging = false, sx, sy;
+
+  modalImg.addEventListener("mousedown", e => {
+    dragging = true;
+    sx = e.clientX;
+    sy = e.clientY;
+  });
+
+  window.addEventListener("mouseup", () => dragging = false);
+
+  window.addEventListener("mousemove", e => {
+    if (!dragging) return;
+    dx += e.clientX - sx;
+    dy += e.clientY - sy;
+    sx = e.clientX;
+    sy = e.clientY;
+    applyTransform();
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeModal();
+  });
+</script>
+
+</body>
+</html>
