@@ -216,33 +216,58 @@ async function loadJSON(url) {
       categories.map(c => `<option value="${c}">${c}</option>`).join("");
   }
 
-  function render() {
-    const q = searchInput.value.toLowerCase();
-    const c = categorySelect.value;
+function render() {
+  const q = searchInput.value.toLowerCase();
+  const c = categorySelect.value;
 
-    const filtered = items.filter(i =>
-      (c === "all" || i.category === c) &&
-      (i.title || "").toLowerCase().includes(q)
+  // 1️⃣ filter dulu
+  const filtered = items.filter(i =>
+    (c === "all" || i.category === c) &&
+    (i.title || "").toLowerCase().includes(q)
+  );
+
+  // 2️⃣ URUTKAN: TERBARU DI ATAS
+  filtered.sort((a, b) => {
+    // pakai date (YYYY-MM-DD)
+    const da = (a.date || "").trim();
+    const db = (b.date || "").trim();
+
+    if (da && db && da !== db) return db.localeCompare(da);
+
+    // fallback: timestamp di nama file __<timestamp>.ext
+    const ta = Number(
+      (a.file || "").match(/__(\d+)\.[a-z0-9]+$/i)?.[1] || 0
+    );
+    const tb = Number(
+      (b.file || "").match(/__(\d+)\.[a-z0-9]+$/i)?.[1] || 0
     );
 
-    grid.innerHTML = "";
-    countEl.textContent = filtered.length + " item";
+    if (ta !== tb) return tb - ta;
 
-    filtered.forEach(i => {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `
-        <img src="${i.file}" loading="lazy">
-        <div class="meta">
-          <span class="badge">${i.category || "-"}</span>
-          <span class="badge">${i.date || "-"}</span>
-          <div class="title">${i.title || "Untitled"}</div>
-        </div>
-      `;
-      div.onclick = () => openModal(i.file);
-      grid.appendChild(div);
-    });
-  }
+    // fallback terakhir biar stabil
+    return (b.file || "").localeCompare(a.file || "");
+  });
+
+  // 3️⃣ render
+  grid.innerHTML = "";
+  countEl.textContent = filtered.length + " item";
+
+  filtered.forEach(i => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <img src="/${i.file}" loading="lazy">
+      <div class="meta">
+        <span class="badge">${i.category || "-"}</span>
+        <span class="badge">${i.date || "-"}</span>
+        <div class="title">${i.title || "Untitled"}</div>
+      </div>
+    `;
+    div.onclick = () => openModal(i.file);
+    grid.appendChild(div);
+  });
+}
+
 
   async function init() {
     const cfg = await loadJSON(CONFIG_URL);
