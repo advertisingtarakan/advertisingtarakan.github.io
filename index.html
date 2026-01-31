@@ -734,7 +734,11 @@ footer{
   .footer-grid{grid-template-columns:1fr}
   .social{justify-content:flex-start}
 }
-
+.more-wrap{
+  margin:16px 0 0;
+  display:flex;
+  justify-content:center; /* tengah */
+}
 .footer-contact{
   border:1px solid rgba(255,255,255,.08);
   border-radius:18px;
@@ -1082,18 +1086,21 @@ footer{
       </div>     
     </div>
 
-   <div class="controls">
+  <div class="controls">
   <select id="cat"></select>
   <input id="search" placeholder="Cari dokumentasi.">
   <div id="count" style="align-self:center;font-size:12px;color:var(--muted)">0 item</div>
 </div>
 
-<!-- muncul hanya kalau hasil > 8 -->
-<div style="margin:10px 0 0; display:flex; justify-content:flex-end;">
+<div id="grid" class="grid"></div>
+
+<!-- tombol di bawah grid -->
+<div class="more-wrap">
   <a id="btnMoreItems" class="btn" href="./gallery" style="display:none;">
     Lihat selengkapnya
   </a>
 </div>
+
 
 <div id="grid" class="grid"></div>
 
@@ -1758,6 +1765,7 @@ if(previewCard) boxObserver.observe(previewCard);
 
 </body>
 </html>
+
 
 
 
