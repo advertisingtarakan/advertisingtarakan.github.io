@@ -115,6 +115,48 @@ pre{
 </div>
 
 <script>
+/* ================= HELPERS ================= */
+const $ = (id) => document.getElementById(id);
+
+const state = {
+  files: []
+};
+
+function log(msg){
+  const el = $("log");
+  const t = new Date().toLocaleString("id-ID");
+  el.textContent += `[${t}] ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function pad2(n){ return String(n).padStart(2,"0"); }
+
+function today(){
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+}
+
+function slug(s){
+  return String(s || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s-]/g,"")   // buang simbol
+    .replace(/\s+/g,"-")       // spasi -> -
+    .replace(/-+/g,"-");       // rapihin ----
+}
+
+function b64(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onerror = () => reject(new Error("Gagal baca file"));
+    r.onload = () => {
+      // r.result = "data:image/png;base64,...."
+      resolve(String(r.result).split(",")[1]);
+    };
+    r.readAsDataURL(file);
+  });
+}
+
 /* ================= CONFIG ================= */
 const GITHUB = {
   owner: "advertisingtarakan",
@@ -122,15 +164,24 @@ const GITHUB = {
   branch: "main"
 };
 
-/* ================= KATEGORI ================= */
 /* ================= CONFIG FILES ================= */
-const CONFIG_URL = "./gallery-config.json";
+// pakai absolute path supaya aman di GitHub Pages root
+const CONFIG_URL = "/gallery-config.json";
 
-/* ================= INIT ================= */
+/* ================= INIT CONFIG ================= */
 async function loadConfig(){
   const res = await fetch(CONFIG_URL, { cache: "no-store" });
-  if(!res.ok) throw new Error("Gagal load gallery-config.json");
-  return res.json();
+  const text = await res.text();
+
+  if(!res.ok){
+    throw new Error(`HTTP ${res.status} saat load config. Awal respons: ${text.slice(0,120)}`);
+  }
+
+  try{
+    return JSON.parse(text);
+  }catch(e){
+    throw new Error(`Config bukan JSON valid. Awal respons: ${text.slice(0,120)}`);
+  }
 }
 
 async function initCategories(){
@@ -141,18 +192,20 @@ async function initCategories(){
   const categories = Array.isArray(cfg.categories) ? cfg.categories : [];
 
   categories.forEach(c=>{
-    const o=document.createElement("option");
-    o.value=c;
-    o.textContent=c.replace(/-/g," ").toUpperCase();
+    const o = document.createElement("option");
+    o.value = c;
+    o.textContent = c.replace(/-/g," ").toUpperCase();
     sel.appendChild(o);
   });
+
+  log(`✅ Config loaded. Total kategori: ${categories.length}`);
 }
 
 initCategories().catch(err=>{
   console.error(err);
+  log("❌ " + err.message);
   alert("Config kategori tidak bisa dibaca. Pastikan gallery-config.json ada.");
 });
-
 
 /* ================= GITHUB API ================= */
 async function ghPut(path, body){
@@ -160,24 +213,38 @@ async function ghPut(path, body){
   const res = await fetch(
     `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${path}`,
     {
-      method:"PUT",
-      headers:{
-        "Authorization":`token ${token}`,
-        "Content-Type":"application/json"
+      method: "PUT",
+      headers: {
+        "Authorization": `token ${token}`,
+        "Content-Type": "application/json",
+        "Accept": "application/vnd.github+json"
       },
-      body:JSON.stringify(body)
+      body: JSON.stringify(body)
     }
   );
-  if(!res.ok) throw await res.text();
-  return res.json();
+
+  const text = await res.text();
+  if(!res.ok){
+    // GitHub biasanya mengembalikan JSON error, tapi kadang text juga
+    throw new Error(`GitHub PUT gagal (${res.status}): ${text.slice(0,200)}`);
+  }
+
+  try { return JSON.parse(text); }
+  catch { return text; }
 }
 
 async function ghGet(path){
   const token = $("token").value.trim();
   const res = await fetch(
     `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${path}`,
-    { headers:{ Authorization:`token ${token}` } }
+    {
+      headers: {
+        "Authorization": `token ${token}`,
+        "Accept": "application/vnd.github+json"
+      }
+    }
   );
+
   if(!res.ok) return null;
   return res.json();
 }
@@ -185,23 +252,26 @@ async function ghGet(path){
 /* ================= FILE HANDLING ================= */
 function addFiles(files){
   [...files].forEach(f=>{
-    if(f.type.startsWith("image/")) state.files.push(f);
+    if(f && f.type && f.type.startsWith("image/")) state.files.push(f);
   });
   render();
 }
 
 function render(){
-  const list=$("fileList");
-  list.innerHTML="";
+  const list = $("fileList");
+  list.innerHTML = "";
+
   state.files.forEach((f,i)=>{
-    const d=document.createElement("div");
-    d.className="item";
-    d.innerHTML=`
-      <img class="thumb" src="${URL.createObjectURL(f)}">
+    const d = document.createElement("div");
+    d.className = "item";
+    d.innerHTML = `
+      <img class="thumb" src="${URL.createObjectURL(f)}" alt="">
       <div>${f.name}</div>
-      <button onclick="removeFile(${i})">🗑️</button>`;
+      <button type="button" onclick="removeFile(${i})">🗑️</button>
+    `;
     list.appendChild(d);
   });
+
   validate();
 }
 
@@ -220,26 +290,26 @@ function validate(){
 }
 
 /* ================= EVENTS ================= */
-$("btnPick").onclick=()=> $("filePicker").click();
-$("filePicker").onchange=e=>addFiles(e.target.files);
+$("btnPick").onclick = ()=> $("filePicker").click();
+$("filePicker").onchange = e => addFiles(e.target.files);
 
-["dragover","dragenter"].forEach(e=>{
-  $("drop").addEventListener(e,ev=>{
+["dragover","dragenter"].forEach(evt=>{
+  $("drop").addEventListener(evt, ev=>{
     ev.preventDefault();
     $("drop").classList.add("dragover");
   });
 });
-["dragleave","drop"].forEach(e=>{
-  $("drop").addEventListener(e,ev=>{
+["dragleave","drop"].forEach(evt=>{
+  $("drop").addEventListener(evt, ev=>{
     ev.preventDefault();
     $("drop").classList.remove("dragover");
   });
 });
-$("drop").addEventListener("drop",e=>addFiles(e.dataTransfer.files));
+$("drop").addEventListener("drop", e => addFiles(e.dataTransfer.files));
 
-window.addEventListener("paste",e=>{
-  const imgs=[...e.clipboardData.items]
-    .filter(i=>i.type.startsWith("image/"))
+window.addEventListener("paste", e=>{
+  const imgs = [...e.clipboardData.items]
+    .filter(i=>i.type && i.type.startsWith("image/"))
     .map(i=>i.getAsFile());
   addFiles(imgs);
 });
@@ -250,61 +320,69 @@ $("token").oninput = validate;
 
 /* ================= UPLOAD + MANIFEST ================= */
 $("uploadBtn").onclick = async ()=>{
-  log("Mulai upload...");
+  try{
+    log("Mulai upload...");
 
-  const cat = $("category").value;
-  const title = $("title").value;
-  const date = today();
+    const cat = $("category").value;
+    const title = $("title").value.trim();
+    const date = today();
 
-  let manifest = { items: [] };
-  let manifestSha = null;
+    // load manifest lama jika ada
+    let manifest = { items: [] };
+    let manifestSha = null;
 
-  const mf = await ghGet("gallery-manifest.json");
-  if(mf){
-    manifestSha = mf.sha;
-    manifest = JSON.parse(atob(mf.content));
-  }
+    const mf = await ghGet("gallery-manifest.json");
+    if(mf && mf.content){
+      manifestSha = mf.sha;
+      manifest = JSON.parse(atob(mf.content));
+      if(!manifest.items) manifest.items = [];
+    }
 
-  let i=0;
-  for(const f of state.files){
-    const ext = f.name.split(".").pop();
-    const filename =
-      `${date}__${slug(title)}__${Date.now()+i}.${ext}`;
-    const path = `${cat}/${filename}`;
+    let i = 0;
+    for(const f of state.files){
+      const ext = (f.name.split(".").pop() || "png").toLowerCase();
+      const filename = `${date}__${slug(title)}__${Date.now()+i}.${ext}`;
+      const path = `${cat}/${filename}`;
 
-    log("Upload: "+path);
+      log("Upload: " + path);
 
-    await ghPut(path,{
-      message:"upload via updoc",
-      content: await b64(f),
-      branch:GITHUB.branch
+      await ghPut(path, {
+        message: "upload via updoc",
+        content: await b64(f),
+        branch: GITHUB.branch
+      });
+
+      manifest.items.push({
+        category: cat,
+        title: title,
+        date: date,
+        file: path
+      });
+
+      i++;
+    }
+
+    await ghPut("gallery-manifest.json", {
+      message: "update gallery manifest",
+      content: btoa(JSON.stringify(manifest, null, 2)),
+      sha: manifestSha,
+      branch: GITHUB.branch
     });
 
-    // 👉 STRUKTUR SESUAI MANIFEST ASLI
-    manifest.items.push({
-      category: cat,
-      title: title,
-      date: date,
-      file: path
-    });
+    log("✅ Upload + manifest update selesai");
+    alert("Upload & manifest berhasil");
 
-    i++;
+    state.files = [];
+    render();
+  }catch(err){
+    console.error(err);
+    log("❌ " + (err.message || String(err)));
+    alert("Gagal upload. Cek Console & log untuk detail error.");
   }
-
-  await ghPut("gallery-manifest.json",{
-    message:"update gallery manifest",
-    content: btoa(JSON.stringify(manifest, null, 2)),
-    sha: manifestSha,
-    branch:GITHUB.branch
-  });
-
-  log("✅ Upload + manifest update selesai");
-  alert("Upload & manifest berhasil");
-
-  state.files=[];
-  render();
 };
 </script>
+
 </body>
 </html>
+
 
