@@ -200,10 +200,15 @@
   let items = [];
   let categories = [];
 
-  async function loadJSON(url) {
-    const res = await fetch(url);
-    return res.json();
-  }
+async function loadJSON(url) {
+  const bust = `v=${Date.now()}`;
+  const full = url.includes("?") ? `${url}&${bust}` : `${url}?${bust}`;
+
+  const res = await fetch(full, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Gagal load ${url} (HTTP ${res.status})`);
+  return res.json();
+}
+
 
   function buildCategories() {
     categorySelect.innerHTML =
