@@ -1473,33 +1473,50 @@ function render(){
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
 
-  // 1) hasil filter full (untuk hitung total)
+  // 1️⃣ filter dulu
   const filtered = DATA.filter(i =>
     (c === "all" || i.category === c) &&
     String(i.title || "").toLowerCase().includes(q)
   );
 
-  // 2) hanya tampilkan max 8 di INDEX
+  // 2️⃣ SORT: TERBARU PALING ATAS
+  filtered.sort((a, b) => {
+    // pakai date (YYYY-MM-DD)
+    const da = (a.date || "").trim();
+    const db = (b.date || "").trim();
+    if (da && db && da !== db) return db.localeCompare(da);
+
+    // fallback: timestamp di nama file __<timestamp>.ext
+    const ta = Number((a.file || "").match(/__(\d+)\.[a-z0-9]+$/i)?.[1] || 0);
+    const tb = Number((b.file || "").match(/__(\d+)\.[a-z0-9]+$/i)?.[1] || 0);
+    if (ta !== tb) return tb - ta;
+
+    return (b.file || "").localeCompare(a.file || "");
+  });
+
+  // 3️⃣ hanya ambil 8 TERBARU
   const shown = filtered.slice(0, DISPLAY_LIMIT);
 
-  // count tetap total hasil (bukan yang ditampilkan)
+  // count = total hasil (bukan yang ditampilkan)
   document.getElementById("count").textContent = filtered.length + " item";
 
-  // 3) render hanya yang shown
+  // 4️⃣ render
   shown.forEach(i=>{
     const d = document.createElement("div");
     d.className = "gcard";
-    d.innerHTML = `<img loading="lazy" src="./${i.file}" alt="${escapeHtml(i.title||'Dokumentasi')}">
+    d.innerHTML = `
+      <img loading="lazy" src="/${i.file}" alt="${escapeHtml(i.title || 'Dokumentasi')}">
       <div class="meta">
-        <span class="badge">${escapeHtml(i.category||'-')}</span>
-        <span class="badge">${escapeHtml(i.date||'-')}</span>
-        <div class="title">${escapeHtml(i.title||'Untitled')}</div>
-      </div>`;
+        <span class="badge">${escapeHtml(i.category || "-")}</span>
+        <span class="badge">${escapeHtml(i.date || "-")}</span>
+        <div class="title">${escapeHtml(i.title || "Untitled")}</div>
+      </div>
+    `;
     d.onclick = ()=>openModal(i.file);
     grid.appendChild(d);
   });
 
-  // 4) tombol "Lihat selengkapnya" muncul kalau total > 8
+  // 5️⃣ tombol "Lihat selengkapnya"
   if(btnMoreItems){
     const showMore = filtered.length > DISPLAY_LIMIT;
     btnMoreItems.style.display = showMore ? "inline-flex" : "none";
@@ -1508,6 +1525,7 @@ function render(){
     }
   }
 }
+
 
 document.getElementById("search").addEventListener("input", render);
 catSel.addEventListener("change", render);
@@ -1740,6 +1758,7 @@ if(previewCard) boxObserver.observe(previewCard);
 
 </body>
 </html>
+
 
 
 
