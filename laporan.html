@@ -516,14 +516,31 @@ async function fetchTextWithRetry(url, {timeoutMs=FETCH_TIMEOUT_MS, retries=FETC
 /***********************
  * TASK COUNT
  ***********************/
+function cleanTaskText(text){
+  const t = String(text ?? "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\r/g, "")
+    .trim();
+  return /^(?:-|—|–)?$/.test(t) ? "" : t;
+}
+
 function countTasks(text){
-  if(!text) return 0;
-  const lines = String(text).split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  const bullet = lines.filter(l => l.startsWith("-")).length;
+  const t = cleanTaskText(text);
+  if(!t) return 0;
+
+  const lines = t
+    .split(/\n+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .filter(s => !/^(?:-|—|–)$/.test(s));
+
+  const bullet = lines.filter(l => /^-\s*\S/.test(l)).length;
   if(bullet > 0) return bullet;
+
   if(lines.length === 1 && lines[0].includes(" - ")){
     return lines[0].split(" - ").map(s=>s.trim()).filter(Boolean).length;
   }
+
   return lines.length;
 }
 
@@ -559,8 +576,8 @@ function within(d, from, to){
   return true;
 }
 function todayUTC(){
-  const now = new Date();
-  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const p = getWitaParts();
+  return new Date(Date.UTC(p.year, p.month - 1, p.day));
 }
 function isSameDayUTC(a, b){
   return a && b &&
@@ -642,54 +659,33 @@ function pubCsvUrl(pubhtml, gid){
 }
 
 function normalizeLibur(lap, op){
-  const lapText = String(lap || "").trim();
-  const opText  = String(op || "").trim();
+  const lapText = cleanTaskText(lap);
+  const opText  = cleanTaskText(op);
   const combinedLower = `${lapText} ${opText}`.toLowerCase();
   const keywordLibur = LIBUR_KEYWORDS.some(k => combinedLower.includes(k));
-  const totalCount = countTasks(lapText) + countTasks(opText);
 
   return {
     isLibur: keywordLibur,
     lapangan: keywordLibur ? "LIBUR" : (lapText || "-"),
     operator: keywordLibur ? "LIBUR" : (opText || "-"),
-    total: keywordLibur ? 0 : totalCount
+    total: keywordLibur ? 0 : (countTasks(lapText) + countTasks(opText))
   };
 }
 
 function extractRowsFromGrid(grid){
-  // cari header
-  let headerRow = -1;
-  for(let i=0;i<grid.length;i++){
-    const row = grid[i].map(x=>String(x||"").toLowerCase().trim());
-    const hasTanggal = row.some(c => c === "tanggal" || c.includes("tanggal"));
-    const hasLap = row.some(c => c.includes("tugas tim lapangan"));
-    const hasOp  = row.some(c => c.includes("tugas tim operator"));
-    if(hasTanggal && (hasLap || hasOp)){
-      headerRow = i;
-      break;
-    }
-  }
-  if(headerRow === -1) headerRow = 0;
-
-  const header = grid[headerRow].map(x=>String(x||"").toLowerCase().trim());
-  let idxTanggal = header.findIndex(c => c.includes("tanggal"));
-  let idxLap = header.findIndex(c => c.includes("tugas tim lapangan"));
-  let idxOp  = header.findIndex(c => c.includes("tugas tim operator"));
-  if(idxTanggal < 0) idxTanggal = 0;
-  if(idxLap < 0) idxLap = 1;
-  if(idxOp < 0) idxOp = 2;
-
   const out = [];
   const tday = todayUTC();
 
-  for(let i=headerRow+1;i<grid.length;i++){
-    const row = grid[i];
-    const tanggalStr = (row[idxTanggal] ?? "").trim();
-    const lap = (row[idxLap] ?? "").trim();
-    const op  = (row[idxOp] ?? "").trim();
-    if(!tanggalStr && !lap && !op) continue;
+  for(const rawRow of grid){
+    const row = rawRow.map(x => String(x ?? "").replace(/ /g, " ").trim());
+    if(row.every(cell => !cell)) continue;
 
+    const tanggalStr = row[0] || "";
     const date = toDateFlexible(tanggalStr);
+    if(!date) continue;
+
+    const lap = row[1] || "";
+    const op  = row[2] || "";
     const norm = normalizeLibur(lap, op);
 
     out.push({
@@ -699,9 +695,10 @@ function extractRowsFromGrid(grid){
       operator: norm.operator,
       total: norm.total,
       isLibur: norm.isLibur,
-      isToday: date ? isSameDayUTC(date, tday) : false
+      isToday: isSameDayUTC(date, tday)
     });
   }
+
   out.sort((a,b)=>{
     const ta = a.date ? a.date.getTime() : -Infinity;
     const tb = b.date ? b.date.getTime() : -Infinity;
@@ -710,42 +707,45 @@ function extractRowsFromGrid(grid){
   return out;
 }
 
+function cellTextWithBreaks(cell){
+  const clone = cell.cloneNode(true);
+  clone.querySelectorAll("br").forEach(br => br.replaceWith("\n"));
+  return String(clone.textContent || "").replace(/\u00a0/g, " ").trim();
+}
+
+function extractRowsFromPublishedHtml(html){
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const rows = [...doc.querySelectorAll("table tr")]
+    .map(tr => [...tr.querySelectorAll("th,td")].map(cellTextWithBreaks))
+    .filter(row => row.some(cell => String(cell || "").trim()));
+
+  return extractRowsFromGrid(rows);
+}
+
 /***********************
  * LOAD
  ***********************/
 async function loadRows(){
   const mainHtml = await fetchTextWithRetry(PUBLISHED_HTML_URL);
+
+  const htmlRows = extractRowsFromPublishedHtml(mainHtml);
+  if(htmlRows.length){
+    document.getElementById("debugGid").textContent = "gid: pubhtml";
+    document.getElementById("debugSource").textContent = "source: pubhtml";
+    return htmlRows;
+  }
+
   const gidMap = getGidMapFromPubhtml(mainHtml);
+  const gid = gidMap.get(TARGET_SHEET_NAME.toLowerCase());
+  if(!gid){
+    throw new Error(`Tab "${TARGET_SHEET_NAME}" tidak ditemukan pada publish sheet.`);
+  }
 
-  let gid = gidMap.get(TARGET_SHEET_NAME.toLowerCase()) || "0";
   document.getElementById("debugGid").textContent = `gid: ${gid}`;
-
-  const primaryUrl = pubCsvUrl(PUBLISHED_HTML_URL, gid);
   document.getElementById("debugSource").textContent = "source: csv";
 
-  let csvText = await fetchTextWithRetry(primaryUrl);
-  let grid = parseCSV(csvText);
-
-  // fallback gid kalau grid kosong/aneh
-  if(grid.length < 2){
-    const fallbacks = ["0","1","2","3","4","5","6","7","8","9"];
-    for(const g of fallbacks){
-      if(g === gid) continue;
-      const u2 = pubCsvUrl(PUBLISHED_HTML_URL, g);
-      try{
-        const t2 = await fetchTextWithRetry(u2, {retries: 1, timeoutMs: 9000});
-        const g2 = parseCSV(t2);
-        if(g2.length >= 2){
-          gid = g;
-          document.getElementById("debugGid").textContent = `gid: ${gid}`;
-          grid = g2;
-          break;
-        }
-      }catch(_e){
-        // lanjut coba gid lain
-      }
-    }
-  }
+  const csvText = await fetchTextWithRetry(pubCsvUrl(PUBLISHED_HTML_URL, gid));
+  const grid = parseCSV(csvText);
   return extractRowsFromGrid(grid);
 }
 
