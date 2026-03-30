@@ -642,16 +642,17 @@ function pubCsvUrl(pubhtml, gid){
 }
 
 function normalizeLibur(lap, op){
-  const combinedLower = (String(lap||"") + " " + String(op||"")).toLowerCase();
+  const lapText = String(lap || "").trim();
+  const opText  = String(op || "").trim();
+  const combinedLower = `${lapText} ${opText}`.toLowerCase();
   const keywordLibur = LIBUR_KEYWORDS.some(k => combinedLower.includes(k));
-  const totalCount = countTasks(lap) + countTasks(op);
-  const isLibur = keywordLibur || totalCount === 0;
+  const totalCount = countTasks(lapText) + countTasks(opText);
 
   return {
-    isLibur,
-    lapangan: isLibur ? "LIBUR" : (lap || ""),
-    operator: isLibur ? "LIBUR" : (op || ""),
-    total: isLibur ? 0 : totalCount
+    isLibur: keywordLibur,
+    lapangan: keywordLibur ? "LIBUR" : (lapText || "-"),
+    operator: keywordLibur ? "LIBUR" : (opText || "-"),
+    total: keywordLibur ? 0 : totalCount
   };
 }
 
