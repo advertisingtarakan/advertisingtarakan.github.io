@@ -735,18 +735,36 @@ async function loadRows(){
     return htmlRows;
   }
 
-  const gidMap = getGidMapFromPubhtml(mainHtml);
-  const gid = gidMap.get(TARGET_SHEET_NAME.toLowerCase());
-  if(!gid){
-    throw new Error(`Tab "${TARGET_SHEET_NAME}" tidak ditemukan pada publish sheet.`);
+  // fallback 1: langsung ambil csv default dari publish utama
+  // ini penting kalau publish sheet hanya menampilkan 1 tab aktif dan tidak memunculkan nama tab/gid.
+  try{
+    const defaultCsvUrl = PUBLISHED_HTML_URL.replace(/\/pubhtml(\?.*)?$/i, "/pub?output=csv");
+    const csvTextDefault = await fetchTextWithRetry(defaultCsvUrl);
+    const gridDefault = parseCSV(csvTextDefault);
+    const rowsDefault = extractRowsFromGrid(gridDefault);
+    if(rowsDefault.length){
+      document.getElementById("debugGid").textContent = "gid: default";
+      document.getElementById("debugSource").textContent = "source: csv-default";
+      return rowsDefault;
+    }
+  }catch(_e){
+    // lanjut ke fallback berikutnya
   }
 
-  document.getElementById("debugGid").textContent = `gid: ${gid}`;
-  document.getElementById("debugSource").textContent = "source: csv";
+  // fallback 2: kalau publish punya beberapa tab dan gid tersedia, coba tab bernama TARGET_SHEET_NAME
+  const gidMap = getGidMapFromPubhtml(mainHtml);
+  const gid = gidMap.get(TARGET_SHEET_NAME.toLowerCase());
+  if(gid){
+    document.getElementById("debugGid").textContent = `gid: ${gid}`;
+    document.getElementById("debugSource").textContent = "source: csv-gid";
 
-  const csvText = await fetchTextWithRetry(pubCsvUrl(PUBLISHED_HTML_URL, gid));
-  const grid = parseCSV(csvText);
-  return extractRowsFromGrid(grid);
+    const csvText = await fetchTextWithRetry(pubCsvUrl(PUBLISHED_HTML_URL, gid));
+    const grid = parseCSV(csvText);
+    const rows = extractRowsFromGrid(grid);
+    if(rows.length) return rows;
+  }
+
+  throw new Error('Data publish tidak terbaca. Cek apakah sheet masih di-publish dan URL-nya benar.');
 }
 
 /***********************
