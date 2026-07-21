@@ -551,7 +551,8 @@ select:focus,input:focus,textarea:focus{border-color:rgba(109,169,255,.55)}
 .gcard img{
   width:100%;
   height:190px;
-  object-fit:cover;
+  object-fit:contain;
+  background:#080b12;
 }
 .meta{padding:10px}
 .meta .badge{margin-right:6px}
@@ -561,53 +562,94 @@ select:focus,input:focus,textarea:focus{border-color:rgba(109,169,255,.55)}
   font-weight:800;
 }
 
-/* ===== MODAL ZOOM ===== */
+/* ===== MODAL GALERI: FIT PENUH + NAVIGASI ===== */
+body.modal-open{overflow:hidden}
 .modal{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.88);
+  background:rgba(0,0,0,.94);
   display:none;
+  z-index:2000;
+  touch-action:pan-y;
+}
+.modal.open{display:block}
+.modal-inner{
+  position:absolute;
+  inset:0;
+  display:flex;
   align-items:center;
   justify-content:center;
-  z-index:2000;
-}
-.modal.open{display:flex}
-.modal-inner{
-  width:95vw;
-  height:90vh;
-  position:relative;
-  overflow:hidden;
+  padding:68px 82px 86px;
 }
 .modal img{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%) scale(1);
-  transform-origin:center;
-  cursor:grab;
+  display:block;
+  width:auto;
+  height:auto;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
   user-select:none;
+  -webkit-user-drag:none;
 }
-.modal button{
+.modal-control{
   position:absolute;
+  z-index:3;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.25);
+  background:rgba(0,0,0,.58);
+  color:#fff;
+  cursor:pointer;
+  backdrop-filter:blur(8px);
+}
+.modal-close{
   top:16px;
   right:16px;
-  padding:9px 12px;
+  width:44px;
+  height:44px;
   border-radius:12px;
-  border:1px solid var(--line);
-  background:rgba(0,0,0,.6);
-  color:#fff;
-  font-weight:800;
-  cursor:pointer;
+  font-size:20px;
 }
-.modal .hint{
+.modal-nav{
+  top:50%;
+  transform:translateY(-50%);
+  width:52px;
+  height:64px;
+  border-radius:14px;
+  font-size:34px;
+}
+.modal-prev{left:16px}
+.modal-next{right:16px}
+.modal-nav:disabled{opacity:.25;cursor:default}
+.modal-caption{
   position:absolute;
-  left:16px; top:16px;
-  color:rgba(255,255,255,.7);
-  font-size:12px;
-  padding:8px 10px;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  max-width:min(720px,calc(100vw - 40px));
+  padding:9px 14px;
   border-radius:12px;
-  border:1px solid var(--line);
-  background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.6);
+  color:rgba(255,255,255,.9);
+  text-align:center;
+  font-size:13px;
+  backdrop-filter:blur(8px);
+}
+@media(max-width:650px){
+  .modal-inner{padding:64px 12px 88px}
+  .modal-nav{
+    top:auto;
+    bottom:17px;
+    transform:none;
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    font-size:28px;
+  }
+  .modal-prev{left:14px}
+  .modal-next{right:14px}
+  .modal-caption{bottom:20px;max-width:calc(100vw - 132px)}
 }
 
 /* ===== FAQ (animated accordion) ===== */
@@ -1101,19 +1143,17 @@ footer{
   </a>
 </div>
 
-
-<div id="grid" class="grid"></div>
-
-
 </section>
 
 <!-- MODAL -->
-<div id="modal" class="modal" aria-label="Preview gambar">
-  <div class="modal-inner">
-    <div class="hint">Scroll = zoom • Drag = geser • Double click = reset</div>
-    <button onclick="closeModal()" aria-label="Tutup">✕</button>
+<div id="modal" class="modal" role="dialog" aria-modal="true" aria-label="Preview gambar">
+  <div id="modalInner" class="modal-inner">
     <img id="modalImg" alt="Preview dokumentasi">
   </div>
+  <button id="modalClose" class="modal-control modal-close" type="button" aria-label="Tutup">✕</button>
+  <button id="modalPrev" class="modal-control modal-nav modal-prev" type="button" aria-label="Media sebelumnya">‹</button>
+  <button id="modalNext" class="modal-control modal-nav modal-next" type="button" aria-label="Media berikutnya">›</button>
+  <div id="modalCaption" class="modal-caption"></div>
 </div>
 
 <!-- FAQ -->
@@ -1503,12 +1543,13 @@ function render(){
 
   // 3️⃣ hanya ambil 8 TERBARU
   const shown = filtered.slice(0, DISPLAY_LIMIT);
+  currentGalleryItems = shown;
 
   // count = total hasil (bukan yang ditampilkan)
   document.getElementById("count").textContent = filtered.length + " item";
 
   // 4️⃣ render
-  shown.forEach(i=>{
+  shown.forEach((i, itemIndex)=>{
     const d = document.createElement("div");
     d.className = "gcard";
     d.innerHTML = `
@@ -1519,7 +1560,7 @@ function render(){
         <div class="title">${escapeHtml(i.title || "Untitled")}</div>
       </div>
     `;
-    d.onclick = ()=>openModal(i.file);
+    d.onclick = ()=>openModal(itemIndex);
     grid.appendChild(d);
   });
 
@@ -1546,48 +1587,90 @@ function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
 }
 
-/* ===== MODAL ZOOM (same behavior) ===== */
-let scale=1,dx=0,dy=0,drag=false,sx,sy;
-function openModal(src){
-  const modal=document.getElementById("modal");
-  const modalImg=document.getElementById("modalImg");
-  modal.classList.add("open");
-  modalImg.src="./"+src;
-  scale=1;dx=0;dy=0;apply();
+/* ===== MODAL GALERI: FIT PENUH + KANAN/KIRI + SWIPE ===== */
+let currentGalleryItems = [];
+let currentGalleryIndex = -1;
+let galleryTouchStartX = 0;
+let galleryTouchStartY = 0;
+
+function galleryMediaUrl(file){
+  return String(file || "").startsWith("http") ? file : "./" + String(file || "").replace(/^\/+/, "");
 }
+
+function updateGalleryModal(){
+  const item = currentGalleryItems[currentGalleryIndex];
+  if(!item) return;
+
+  const img = document.getElementById("modalImg");
+  img.src = galleryMediaUrl(item.file);
+  img.alt = item.title || "Preview dokumentasi";
+  document.getElementById("modalCaption").textContent =
+    `${currentGalleryIndex + 1} / ${currentGalleryItems.length} • ${item.title || "Untitled"}`;
+
+  const onlyOne = currentGalleryItems.length <= 1;
+  document.getElementById("modalPrev").disabled = onlyOne;
+  document.getElementById("modalNext").disabled = onlyOne;
+
+  if(!onlyOne){
+    const prev = currentGalleryItems[(currentGalleryIndex - 1 + currentGalleryItems.length) % currentGalleryItems.length];
+    const next = currentGalleryItems[(currentGalleryIndex + 1) % currentGalleryItems.length];
+    [prev,next].forEach(entry=>{
+      const preload = new Image();
+      preload.src = galleryMediaUrl(entry.file);
+    });
+  }
+}
+
+function openModal(index){
+  currentGalleryIndex = index;
+  updateGalleryModal();
+  document.getElementById("modal").classList.add("open");
+  document.body.classList.add("modal-open");
+  document.getElementById("modalClose").focus();
+}
+
 function closeModal(){
-  document.getElementById("modal").classList.remove("open")
+  document.getElementById("modal").classList.remove("open");
+  document.body.classList.remove("modal-open");
+  document.getElementById("modalImg").removeAttribute("src");
+  currentGalleryIndex = -1;
 }
-function apply(){
-  document.getElementById("modalImg").style.transform=
-    `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(${scale})`;
+
+function showGalleryRelative(step){
+  if(currentGalleryItems.length <= 1 || currentGalleryIndex < 0) return;
+  currentGalleryIndex = (currentGalleryIndex + step + currentGalleryItems.length) % currentGalleryItems.length;
+  updateGalleryModal();
 }
-document.getElementById("modalImg").addEventListener("wheel",(e)=>{
-  e.preventDefault();
-  scale += e.deltaY * -0.001;
-  scale = Math.max(.5, Math.min(5, scale));
-  apply();
-},{passive:false});
-document.getElementById("modalImg").addEventListener("mousedown",(e)=>{
-  drag=true;sx=e.clientX;sy=e.clientY;
-});
-window.addEventListener("mouseup",()=>drag=false);
-window.addEventListener("mousemove",(e)=>{
-  if(!drag) return;
-  dx += e.clientX - sx;
-  dy += e.clientY - sy;
-  sx = e.clientX; sy = e.clientY;
-  apply();
-});
-document.getElementById("modalImg").addEventListener("dblclick",()=>{
-  scale=1;dx=0;dy=0;apply();
-});
+
+document.getElementById("modalClose").addEventListener("click",closeModal);
+document.getElementById("modalPrev").addEventListener("click",()=>showGalleryRelative(-1));
+document.getElementById("modalNext").addEventListener("click",()=>showGalleryRelative(1));
+
 document.addEventListener("keydown",(e)=>{
+  const modal = document.getElementById("modal");
+  if(!modal.classList.contains("open")) return;
   if(e.key==="Escape") closeModal();
+  if(e.key==="ArrowLeft") showGalleryRelative(-1);
+  if(e.key==="ArrowRight") showGalleryRelative(1);
 });
+
 document.getElementById("modal").addEventListener("click",(e)=>{
-  if(e.target.id==="modal") closeModal();
+  if(e.target.id==="modal" || e.target.id==="modalInner") closeModal();
 });
+
+document.getElementById("modal").addEventListener("touchstart",(e)=>{
+  const touch=e.changedTouches[0];
+  galleryTouchStartX=touch.clientX;
+  galleryTouchStartY=touch.clientY;
+},{passive:true});
+
+document.getElementById("modal").addEventListener("touchend",(e)=>{
+  const touch=e.changedTouches[0];
+  const dx=touch.clientX-galleryTouchStartX;
+  const dy=touch.clientY-galleryTouchStartY;
+  if(Math.abs(dx)<50 || Math.abs(dx)<Math.abs(dy)) return;
+  showGalleryRelative(dx<0 ? 1 : -1);
+},{passive:true});
 
 /* ===== CONTACT -> WhatsApp template ===== */
 const WA_NUMBER = "6282252509320";

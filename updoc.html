@@ -8,12 +8,13 @@
 <style>
 :root{
   --bg:#0b1220; --fg:#e8eeff; --muted:#9fb0d0; --line:#233;
+  --ok:#39d98a; --warn:#ffc857; --danger:#ff6b6b;
 }
 *{box-sizing:border-box}
 body{
   margin:0; padding:24px;
   background:var(--bg); color:var(--fg);
-  font-family:system-ui
+  font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif
 }
 .container{max-width:1100px;margin:auto}
 .card{
@@ -24,7 +25,8 @@ body{
   margin-bottom:16px
 }
 h1{margin:0 0 6px;font-size:20px}
-p{margin:0;color:var(--muted);font-size:13px}
+p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+label{display:block;margin:0 0 7px;font-size:13px;font-weight:700}
 
 .drop{
   border:2px dashed #334;
@@ -49,8 +51,34 @@ input,select,button{
   background:#0b1220;
   color:var(--fg)
 }
+input,select{margin-bottom:12px}
 button{cursor:pointer;font-weight:700}
-button:disabled{opacity:.5}
+button:disabled{opacity:.5;cursor:not-allowed}
+
+.auth-actions,.token-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.auth-status{
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:10px;
+  background:#0b1220;
+  color:var(--muted);
+  font-size:13px;
+}
+.auth-status.ok{color:var(--ok);border:1px solid rgba(57,217,138,.35)}
+.auth-status.error{color:var(--danger);border:1px solid rgba(255,107,107,.35)}
+.auth-status.warn{color:var(--warn);border:1px solid rgba(255,200,87,.35)}
+details{
+  margin-top:14px;
+  border-top:1px solid var(--line);
+  padding-top:12px;
+}
+summary{cursor:pointer;font-weight:700;font-size:13px}
+.setup-body{padding-top:12px}
+.security-note{margin-top:10px;color:var(--warn)}
 
 .list{margin-top:12px;display:flex;flex-direction:column;gap:10px}
 .item{
@@ -62,6 +90,7 @@ button:disabled{opacity:.5}
   border-radius:12px;
   padding:8px
 }
+.item button{width:auto}
 .thumb{width:80px;height:60px;object-fit:cover;border-radius:8px}
 
 pre{
@@ -70,7 +99,15 @@ pre{
   border-radius:10px;
   max-height:220px;
   overflow:auto;
-  font-size:12px
+  font-size:12px;
+  white-space:pre-wrap
+}
+
+@media(max-width:600px){
+  body{padding:14px}
+  .auth-actions,.token-actions{grid-template-columns:1fr}
+  .item{grid-template-columns:64px 1fr auto}
+  .thumb{width:64px;height:52px}
 }
 </style>
 </head>
@@ -80,28 +117,47 @@ pre{
 
 <div class="card">
 <h1>Uploader Dokumentasi</h1>
-<p>Drag & drop, paste <b>Ctrl + V</b>, atau pilih file → upload langsung ke GitHub</p>
+<p>Drag & drop, paste <b>Ctrl + V</b>, atau pilih file → upload langsung ke GitHub.</p>
 </div>
 
 <div class="card">
-<label>GitHub Token (Classic)</label>
-<input id="token" type="password" placeholder="ghp_..." />
+  <label for="adminPassword">Password Upload</label>
+  <input id="adminPassword" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Masukkan password upload" />
+  <div class="auth-actions">
+    <button id="unlockBtn" type="button">🔓 Buka Akses Upload</button>
+    <button id="lockBtn" type="button" disabled>🔒 Kunci Akses</button>
+  </div>
+  <div id="authStatus" class="auth-status">Akses upload masih terkunci.</div>
+
+  <details id="tokenSetup">
+    <summary>Pengaturan token GitHub (cukup sekali di browser ini)</summary>
+    <div class="setup-body">
+      <p>Masukkan password upload di atas, lalu simpan token GitHub. Token dienkripsi di penyimpanan browser dan setelah itu upload cukup memakai password.</p>
+      <label for="setupToken" style="margin-top:12px">GitHub Personal Access Token</label>
+      <input id="setupToken" type="password" autocomplete="off" placeholder="github_pat_... atau ghp_..." />
+      <div class="token-actions">
+        <button id="saveTokenBtn" type="button">💾 Simpan Token Terenkripsi</button>
+        <button id="clearTokenBtn" type="button">🗑️ Hapus Token Tersimpan</button>
+      </div>
+      <p class="security-note">Catatan: GitHub Pages adalah situs statis. Password ini hanya membuka token yang tersimpan di browser, bukan menggantikan autentikasi GitHub di server.</p>
+    </div>
+  </details>
 </div>
 
 <div class="card drop" id="drop">
   🖼️ Drop / Paste gambar di sini
   <input id="filePicker" type="file" accept="image/*" multiple hidden>
-  <button id="btnPick">📁 Pilih File</button>
+  <button id="btnPick" type="button">📁 Pilih File</button>
 </div>
 
 <div class="card">
-<label>Kategori</label>
+<label for="category">Kategori</label>
 <select id="category"></select>
 
-<label>Judul / Nama Pekerjaan</label>
+<label for="title">Judul / Nama Pekerjaan</label>
 <input id="title" placeholder="Contoh: RS UKT">
 
-<button id="uploadBtn" disabled>🚀 Upload ke GitHub</button>
+<button id="uploadBtn" type="button" disabled>🚀 Upload ke GitHub</button>
 </div>
 
 <div class="card">
@@ -117,9 +173,13 @@ pre{
 <script>
 /* ================= HELPERS ================= */
 const $ = (id) => document.getElementById(id);
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 const state = {
-  files: []
+  files: [],
+  githubToken: "",
+  uploading: false
 };
 
 function log(msg){
@@ -140,21 +200,42 @@ function slug(s){
   return String(s || "")
     .trim()
     .toLowerCase()
-    .replace(/[^\w\s-]/g,"")   // buang simbol
-    .replace(/\s+/g,"-")       // spasi -> -
-    .replace(/-+/g,"-");       // rapihin ----
+    .replace(/[^\w\s-]/g,"")
+    .replace(/\s+/g,"-")
+    .replace(/-+/g,"-");
 }
 
 function b64(file){
   return new Promise((resolve,reject)=>{
     const r = new FileReader();
-    r.onerror = () => reject(new Error("Gagal baca file"));
-    r.onload = () => {
-      // r.result = "data:image/png;base64,...."
-      resolve(String(r.result).split(",")[1]);
-    };
+    r.onerror = () => reject(new Error("Gagal membaca file"));
+    r.onload = () => resolve(String(r.result).split(",")[1]);
     r.readAsDataURL(file);
   });
+}
+
+function bytesToBase64(bytes){
+  let binary = "";
+  const chunk = 0x8000;
+  for(let i=0;i<bytes.length;i+=chunk){
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+function base64ToBytes(value){
+  const binary = atob(String(value).replace(/\s/g,""));
+  const bytes = new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function textToBase64(value){
+  return bytesToBase64(encoder.encode(value));
+}
+
+function base64ToText(value){
+  return decoder.decode(base64ToBytes(value));
 }
 
 /* ================= CONFIG ================= */
@@ -164,13 +245,172 @@ const GITHUB = {
   branch: "main"
 };
 
-/* ================= CONFIG FILES ================= */
-// pakai absolute path supaya aman di GitHub Pages root
 const CONFIG_URL = "/gallery-config.json";
+const TOKEN_STORAGE_KEY = "advertisingtarakan.github.token.v1";
+const PASSWORD_SHA256 = "e0bc60c82713f64ef8a57c0c40d02ce24fd0141d5cc3086259c19b1e62a62bea";
+
+/* ================= PASSWORD + TOKEN STORAGE ================= */
+async function sha256Hex(value){
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(value));
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function validPassword(password){
+  return (await sha256Hex(password)) === PASSWORD_SHA256;
+}
+
+async function deriveEncryptionKey(password, salt, usages){
+  const material = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+
+  return crypto.subtle.deriveKey(
+    { name:"PBKDF2", salt, iterations:200000, hash:"SHA-256" },
+    material,
+    { name:"AES-GCM", length:256 },
+    false,
+    usages
+  );
+}
+
+async function encryptToken(token, password){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveEncryptionKey(password, salt, ["encrypt"]);
+  const encrypted = await crypto.subtle.encrypt(
+    { name:"AES-GCM", iv },
+    key,
+    encoder.encode(token)
+  );
+
+  return JSON.stringify({
+    v:1,
+    salt:bytesToBase64(salt),
+    iv:bytesToBase64(iv),
+    data:bytesToBase64(new Uint8Array(encrypted))
+  });
+}
+
+async function decryptToken(payloadText, password){
+  const payload = JSON.parse(payloadText);
+  if(payload.v !== 1) throw new Error("Format token tersimpan tidak didukung");
+
+  const salt = base64ToBytes(payload.salt);
+  const iv = base64ToBytes(payload.iv);
+  const encrypted = base64ToBytes(payload.data);
+  const key = await deriveEncryptionKey(password, salt, ["decrypt"]);
+  const plain = await crypto.subtle.decrypt(
+    { name:"AES-GCM", iv },
+    key,
+    encrypted
+  );
+  return decoder.decode(plain);
+}
+
+function setAuthStatus(message, type=""){
+  const el = $("authStatus");
+  el.textContent = message;
+  el.className = `auth-status${type ? " " + type : ""}`;
+}
+
+function updateAuthUI(){
+  const unlocked = Boolean(state.githubToken);
+  $("unlockBtn").disabled = unlocked || state.uploading;
+  $("lockBtn").disabled = !unlocked || state.uploading;
+  $("adminPassword").disabled = unlocked || state.uploading;
+  $("saveTokenBtn").disabled = state.uploading;
+  $("clearTokenBtn").disabled = state.uploading;
+  validate();
+}
+
+async function verifyToken(token){
+  const res = await fetch(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}`, {
+    headers:{
+      "Authorization": `Bearer ${token}`,
+      "Accept":"application/vnd.github+json",
+      "X-GitHub-Api-Version":"2022-11-28"
+    }
+  });
+
+  const text = await res.text();
+  if(!res.ok){
+    throw new Error(`Token tidak dapat mengakses repo (${res.status}): ${text.slice(0,160)}`);
+  }
+
+  return text ? JSON.parse(text) : {};
+}
+
+async function saveEncryptedToken(){
+  const password = $("adminPassword").value;
+  const token = $("setupToken").value.trim();
+
+  if(!password) throw new Error("Masukkan password upload terlebih dahulu");
+  if(!(await validPassword(password))) throw new Error("Password upload salah");
+  if(!token) throw new Error("Masukkan token GitHub");
+
+  setAuthStatus("Memeriksa token GitHub...", "warn");
+  await verifyToken(token);
+
+  const encrypted = await encryptToken(token, password);
+  localStorage.setItem(TOKEN_STORAGE_KEY, encrypted);
+  state.githubToken = token;
+  $("setupToken").value = "";
+  $("adminPassword").value = "";
+  setAuthStatus("Akses upload terbuka. Token tersimpan terenkripsi di browser ini.", "ok");
+  log("✅ Token berhasil diverifikasi dan disimpan terenkripsi");
+  updateAuthUI();
+}
+
+async function unlockUpload(){
+  const password = $("adminPassword").value;
+  const saved = localStorage.getItem(TOKEN_STORAGE_KEY);
+
+  if(!saved){
+    $("tokenSetup").open = true;
+    throw new Error("Token belum disimpan. Buka pengaturan token dan lakukan setup sekali.");
+  }
+  if(!(await validPassword(password))) throw new Error("Password upload salah");
+
+  setAuthStatus("Membuka token tersimpan...", "warn");
+  let token;
+  try{
+    token = await decryptToken(saved, password);
+  }catch{
+    throw new Error("Token tersimpan tidak bisa dibuka. Hapus lalu simpan token kembali.");
+  }
+
+  await verifyToken(token);
+  state.githubToken = token;
+  $("adminPassword").value = "";
+  setAuthStatus("Akses upload terbuka.", "ok");
+  log("✅ Akses upload dibuka dengan password");
+  updateAuthUI();
+}
+
+function lockUpload(){
+  state.githubToken = "";
+  $("adminPassword").value = "";
+  setAuthStatus("Akses upload dikunci.");
+  log("🔒 Akses upload dikunci");
+  updateAuthUI();
+}
+
+function clearStoredToken(){
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  state.githubToken = "";
+  $("setupToken").value = "";
+  setAuthStatus("Token tersimpan telah dihapus. Lakukan setup ulang untuk upload.", "warn");
+  log("🗑️ Token tersimpan di browser telah dihapus");
+  updateAuthUI();
+}
 
 /* ================= INIT CONFIG ================= */
 async function loadConfig(){
-  const res = await fetch(CONFIG_URL, { cache: "no-store" });
+  const res = await fetch(CONFIG_URL, { cache:"no-store" });
   const text = await res.text();
 
   if(!res.ok){
@@ -179,7 +419,7 @@ async function loadConfig(){
 
   try{
     return JSON.parse(text);
-  }catch(e){
+  }catch{
     throw new Error(`Config bukan JSON valid. Awal respons: ${text.slice(0,120)}`);
   }
 }
@@ -201,52 +441,71 @@ async function initCategories(){
   log(`✅ Config loaded. Total kategori: ${categories.length}`);
 }
 
+function initAuth(){
+  const hasSavedToken = Boolean(localStorage.getItem(TOKEN_STORAGE_KEY));
+  if(hasSavedToken){
+    setAuthStatus("Token tersedia di browser. Masukkan password untuk membuka akses.");
+  }else{
+    setAuthStatus("Belum ada token tersimpan. Lakukan pengaturan token sekali.", "warn");
+    $("tokenSetup").open = true;
+  }
+  updateAuthUI();
+}
+
 initCategories().catch(err=>{
   console.error(err);
   log("❌ " + err.message);
   alert("Config kategori tidak bisa dibaca. Pastikan gallery-config.json ada.");
 });
+initAuth();
 
 /* ================= GITHUB API ================= */
+function requireToken(){
+  if(!state.githubToken) throw new Error("Akses upload belum dibuka");
+  return state.githubToken;
+}
+
 async function ghPut(path, body){
-  const token = $("token").value.trim();
+  const token = requireToken();
   const res = await fetch(
     `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${path}`,
     {
-      method: "PUT",
-      headers: {
-        "Authorization": `token ${token}`,
-        "Content-Type": "application/json",
-        "Accept": "application/vnd.github+json"
+      method:"PUT",
+      headers:{
+        "Authorization":`Bearer ${token}`,
+        "Content-Type":"application/json",
+        "Accept":"application/vnd.github+json",
+        "X-GitHub-Api-Version":"2022-11-28"
       },
-      body: JSON.stringify(body)
+      body:JSON.stringify(body)
     }
   );
 
   const text = await res.text();
   if(!res.ok){
-    // GitHub biasanya mengembalikan JSON error, tapi kadang text juga
     throw new Error(`GitHub PUT gagal (${res.status}): ${text.slice(0,200)}`);
   }
 
-  try { return JSON.parse(text); }
-  catch { return text; }
+  try{return JSON.parse(text);}catch{return text;}
 }
 
 async function ghGet(path){
-  const token = $("token").value.trim();
+  const token = requireToken();
   const res = await fetch(
     `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${path}`,
     {
-      headers: {
-        "Authorization": `token ${token}`,
-        "Accept": "application/vnd.github+json"
+      headers:{
+        "Authorization":`Bearer ${token}`,
+        "Accept":"application/vnd.github+json",
+        "X-GitHub-Api-Version":"2022-11-28"
       }
     }
   );
 
-  if(!res.ok) return null;
-  return res.json();
+  if(res.status === 404) return null;
+  const text = await res.text();
+  if(!res.ok) throw new Error(`GitHub GET gagal (${res.status}): ${text.slice(0,200)}`);
+  return text ? JSON.parse(text) : null;
 }
 
 /* ================= FILE HANDLING ================= */
@@ -254,21 +513,33 @@ function addFiles(files){
   [...files].forEach(f=>{
     if(f && f.type && f.type.startsWith("image/")) state.files.push(f);
   });
-  render();
+  renderFiles();
 }
 
-function render(){
+function renderFiles(){
   const list = $("fileList");
   list.innerHTML = "";
 
   state.files.forEach((f,i)=>{
     const d = document.createElement("div");
     d.className = "item";
-    d.innerHTML = `
-      <img class="thumb" src="${URL.createObjectURL(f)}" alt="">
-      <div>${f.name}</div>
-      <button type="button" onclick="removeFile(${i})">🗑️</button>
-    `;
+
+    const img = document.createElement("img");
+    img.className = "thumb";
+    img.src = URL.createObjectURL(f);
+    img.alt = "";
+    img.onload = () => URL.revokeObjectURL(img.src);
+
+    const name = document.createElement("div");
+    name.textContent = f.name;
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "🗑️";
+    remove.disabled = state.uploading;
+    remove.addEventListener("click", ()=>removeFile(i));
+
+    d.append(img, name, remove);
     list.appendChild(d);
   });
 
@@ -277,7 +548,7 @@ function render(){
 
 function removeFile(i){
   state.files.splice(i,1);
-  render();
+  renderFiles();
 }
 
 function validate(){
@@ -285,7 +556,8 @@ function validate(){
     state.files.length &&
     $("category").value &&
     $("title").value.trim() &&
-    $("token").value.trim()
+    state.githubToken &&
+    !state.uploading
   );
 }
 
@@ -314,12 +586,30 @@ window.addEventListener("paste", e=>{
   addFiles(imgs);
 });
 
-$("category").onchange =
-$("title").oninput =
-$("token").oninput = validate;
+$("category").onchange = validate;
+$("title").oninput = validate;
+$("unlockBtn").onclick = async ()=>{
+  try{ await unlockUpload(); }
+  catch(err){ console.error(err); setAuthStatus(err.message || String(err), "error"); log("❌ " + (err.message || String(err))); }
+};
+$("lockBtn").onclick = lockUpload;
+$("saveTokenBtn").onclick = async ()=>{
+  try{ await saveEncryptedToken(); }
+  catch(err){ console.error(err); setAuthStatus(err.message || String(err), "error"); log("❌ " + (err.message || String(err))); }
+};
+$("clearTokenBtn").onclick = ()=>{
+  if(confirm("Hapus token GitHub yang tersimpan di browser ini?")) clearStoredToken();
+};
+$("adminPassword").addEventListener("keydown", e=>{
+  if(e.key === "Enter" && !$("unlockBtn").disabled) $("unlockBtn").click();
+});
 
 /* ================= UPLOAD + MANIFEST ================= */
 $("uploadBtn").onclick = async ()=>{
+  state.uploading = true;
+  updateAuthUI();
+  renderFiles();
+
   try{
     log("Mulai upload...");
 
@@ -327,15 +617,14 @@ $("uploadBtn").onclick = async ()=>{
     const title = $("title").value.trim();
     const date = today();
 
-    // load manifest lama jika ada
-    let manifest = { items: [] };
+    let manifest = {items:[]};
     let manifestSha = null;
 
     const mf = await ghGet("gallery-manifest.json");
     if(mf && mf.content){
       manifestSha = mf.sha;
-      manifest = JSON.parse(atob(mf.content));
-      if(!manifest.items) manifest.items = [];
+      manifest = JSON.parse(base64ToText(mf.content));
+      if(!Array.isArray(manifest.items)) manifest.items = [];
     }
 
     let i = 0;
@@ -347,42 +636,45 @@ $("uploadBtn").onclick = async ()=>{
       log("Upload: " + path);
 
       await ghPut(path, {
-        message: "upload via updoc",
-        content: await b64(f),
-        branch: GITHUB.branch
+        message:"upload via updoc",
+        content:await b64(f),
+        branch:GITHUB.branch
       });
 
       manifest.items.push({
-        category: cat,
-        title: title,
-        date: date,
-        file: path
+        category:cat,
+        title,
+        date,
+        file:path
       });
 
       i++;
     }
 
     await ghPut("gallery-manifest.json", {
-      message: "update gallery manifest",
-      content: btoa(JSON.stringify(manifest, null, 2)),
-      sha: manifestSha,
-      branch: GITHUB.branch
+      message:"update gallery manifest",
+      content:textToBase64(JSON.stringify(manifest, null, 2)),
+      sha:manifestSha,
+      branch:GITHUB.branch
     });
 
     log("✅ Upload + manifest update selesai");
     alert("Upload & manifest berhasil");
 
     state.files = [];
-    render();
+    $("filePicker").value = "";
+    renderFiles();
   }catch(err){
     console.error(err);
     log("❌ " + (err.message || String(err)));
-    alert("Gagal upload. Cek Console & log untuk detail error.");
+    alert("Gagal upload. Cek log untuk detail error.");
+  }finally{
+    state.uploading = false;
+    updateAuthUI();
+    renderFiles();
   }
 };
 </script>
 
 </body>
 </html>
-
-
