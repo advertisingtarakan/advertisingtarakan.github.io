@@ -205,7 +205,28 @@
     .modal-control:hover { background: rgba(255,255,255,.14); }
     .zoom-toolbar button:disabled { opacity: .35; cursor: default; }
     .zoom-value { min-width: 54px; text-align: center; font-size: 12px; font-weight: 800; }
-    .download-btn { white-space: nowrap; }
+    .zoom-toolbar .download-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-width: 112px;
+      padding: 0 13px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .download-icon {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 17px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .download-text { display: block; line-height: 1; }
 
     .nav {
       top: 50%;
@@ -239,8 +260,9 @@
 
     @media (max-width: 760px) {
       .modal-stage { padding: 72px 10px 88px; }
-      .zoom-toolbar { left: 10px; right: 62px; transform: none; justify-content: center; }
+      .zoom-toolbar { left: 10px; right: 62px; transform: none; justify-content: center; gap: 4px; }
       .zoom-toolbar button { min-width: 34px; height: 36px; padding: 0 9px; }
+      .zoom-toolbar .download-btn { min-width: 38px; width: 38px; padding: 0; gap: 0; }
       .download-btn .download-text { display: none; }
       .nav {
         top: auto;
@@ -285,7 +307,7 @@
     <span id="zoomValue" class="zoom-value" aria-live="polite">100%</span>
     <button id="zoomInBtn" type="button" aria-label="Perbesar" title="Perbesar">+</button>
     <button id="zoomResetBtn" type="button" aria-label="Kembalikan ukuran pas" title="Ukuran pas">Pas</button>
-    <button id="downloadBtn" class="download-btn" type="button" aria-label="Download media" title="Download media">⇩ <span class="download-text">Download</span></button>
+    <button id="downloadBtn" class="download-btn" type="button" aria-label="Download media" title="Download media"><svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></svg><span class="download-text">Download</span></button>
   </div>
   <button id="closeBtn" class="modal-control close" type="button" aria-label="Tutup">✕</button>
   <button id="prevBtn" class="modal-control nav prev" type="button" aria-label="Media sebelumnya">‹</button>

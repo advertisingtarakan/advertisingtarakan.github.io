@@ -586,8 +586,6 @@ body.modal-open{overflow:hidden}
   display:flex;
   align-items:center;
   justify-content:center;
-  width:100%;
-  height:100%;
   max-width:100%;
   max-height:100%;
   transform:translate3d(0,0,0) scale(1);
@@ -605,8 +603,8 @@ body.modal-open{overflow:hidden}
   -webkit-user-drag:none;
   cursor:zoom-in;
 }
-.modal.zoomed img{cursor:grab}
-.modal.dragging img{cursor:grabbing}
+.modal.zoomed .modal img{cursor:grab}
+.modal.dragging .modal img{cursor:grabbing}
 .modal-control,
 .zoom-toolbar button{
   display:grid;
@@ -654,7 +652,28 @@ body.modal-open{overflow:hidden}
 .modal-control:hover{background:rgba(255,255,255,.14)}
 .zoom-toolbar button:disabled{opacity:.35;cursor:default}
 .zoom-value{min-width:54px;text-align:center;font-size:12px;font-weight:800}
-.download-btn{white-space:nowrap}
+.zoom-toolbar .download-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-width:112px;
+  padding:0 13px;
+  line-height:1;
+  white-space:nowrap;
+}
+.download-icon{
+  width:17px;
+  height:17px;
+  flex:0 0 17px;
+  display:block;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.download-text{display:block;line-height:1}
 .modal-nav{
   top:50%;
   transform:translateY(-50%);
@@ -684,8 +703,9 @@ body.modal-open{overflow:hidden}
 }
 @media(max-width:760px){
   .modal-inner{padding:72px 10px 88px}
-  .zoom-toolbar{left:10px;right:62px;transform:none;justify-content:center}
+  .zoom-toolbar{left:10px;right:62px;transform:none;justify-content:center;gap:4px}
   .zoom-toolbar button{min-width:34px;height:36px;padding:0 9px}
+  .zoom-toolbar .download-btn{min-width:38px;width:38px;padding:0;gap:0}
   .download-btn .download-text{display:none}
   .modal-nav{
     top:auto;
@@ -1206,7 +1226,7 @@ footer{
     <span id="modalZoomValue" class="zoom-value" aria-live="polite">100%</span>
     <button id="modalZoomIn" type="button" aria-label="Perbesar" title="Perbesar">+</button>
     <button id="modalZoomReset" type="button" aria-label="Kembalikan ukuran pas" title="Ukuran pas">Pas</button>
-    <button id="modalDownload" class="download-btn" type="button" aria-label="Download media" title="Download media">⇩ <span class="download-text">Download</span></button>
+    <button id="modalDownload" class="download-btn" type="button" aria-label="Download media" title="Download media"><svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></svg><span class="download-text">Download</span></button>
   </div>
   <button id="modalClose" class="modal-control modal-close" type="button" aria-label="Tutup">✕</button>
   <button id="modalPrev" class="modal-control modal-nav modal-prev" type="button" aria-label="Media sebelumnya">‹</button>
@@ -1831,6 +1851,11 @@ galleryZoomIn.addEventListener("click",()=>gallerySetZoom(galleryZoomScale+GALLE
 galleryZoomReset.addEventListener("click",galleryResetZoom);
 galleryDownload.addEventListener("click",downloadGalleryCurrent);
 galleryModalImg.addEventListener("load",galleryApplyZoom);
+galleryModalImg.addEventListener("dblclick",e=>{
+  e.preventDefault();
+  galleryToggleZoom(e.clientX,e.clientY);
+});
+
 document.addEventListener("keydown",e=>{
   if(!galleryModal.classList.contains("open")) return;
   if(e.key==="Escape") closeModal();
@@ -1853,7 +1878,7 @@ galleryStage.addEventListener("wheel",e=>{
 
 galleryStage.addEventListener("pointerdown",e=>{
   if(e.button!==undefined && e.button!==0) return;
-  try{galleryStage.setPointerCapture?.(e.pointerId);}catch(error){}
+  galleryStage.setPointerCapture?.(e.pointerId);
   galleryPointers.set(e.pointerId,{x:e.clientX,y:e.clientY,type:e.pointerType});
   galleryGestureMoved=false;
 
@@ -1881,24 +1906,17 @@ galleryStage.addEventListener("pointermove",e=>{
     return;
   }
 
-  if(e.pointerId===galleryDragPointerId){
+  if(e.pointerId===galleryDragPointerId && galleryZoomScale>1.001){
+    galleryPanX+=e.clientX-previous.x;
+    galleryPanY+=e.clientY-previous.y;
     if(Math.abs(e.clientX-gallerySwipeStartX)>4 || Math.abs(e.clientY-gallerySwipeStartY)>4) galleryGestureMoved=true;
-    if(galleryZoomScale>1.001){
-      galleryPanX+=e.clientX-previous.x;
-      galleryPanY+=e.clientY-previous.y;
-      galleryApplyZoom();
-    }
+    galleryApplyZoom();
   }
 });
 
 function finishGalleryPointer(e){
   if(!galleryPointers.has(e.pointerId)) return;
-  const storedPoint=galleryPointers.get(e.pointerId);
-  const point={
-    x:Number.isFinite(e.clientX) ? e.clientX : storedPoint.x,
-    y:Number.isFinite(e.clientY) ? e.clientY : storedPoint.y,
-    type:e.pointerType || storedPoint.type
-  };
+  const point=galleryPointers.get(e.pointerId);
   galleryPointers.delete(e.pointerId);
 
   if(galleryPointers.size<2) galleryPinchStartDistance=0;
@@ -1907,7 +1925,7 @@ function finishGalleryPointer(e){
     const dx=point.x-gallerySwipeStartX;
     const dy=point.y-gallerySwipeStartY;
 
-    if(!galleryGestureMoved && (point.type==="touch" || point.type==="mouse")){
+    if(galleryZoomScale<=1.001 && !galleryGestureMoved && e.pointerType==="touch"){
       const now=Date.now();
       if(now-galleryLastTapTime<320 && Math.hypot(point.x-galleryLastTapX,point.y-galleryLastTapY)<36){
         galleryToggleZoom(point.x,point.y);
