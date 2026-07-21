@@ -562,7 +562,7 @@ select:focus,input:focus,textarea:focus{border-color:rgba(109,169,255,.55)}
   font-weight:800;
 }
 
-/* ===== MODAL GALERI: FIT PENUH + NAVIGASI ===== */
+/* ===== MODAL GALERI: FIT PENUH + ZOOM + PAN + DOWNLOAD ===== */
 body.modal-open{overflow:hidden}
 .modal{
   position:fixed;
@@ -570,7 +570,6 @@ body.modal-open{overflow:hidden}
   background:rgba(0,0,0,.94);
   display:none;
   z-index:2000;
-  touch-action:pan-y;
 }
 .modal.open{display:block}
 .modal-inner{
@@ -579,7 +578,21 @@ body.modal-open{overflow:hidden}
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:68px 82px 86px;
+  overflow:hidden;
+  padding:76px 82px 88px;
+  touch-action:none;
+}
+.zoom-layer{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  transform:translate3d(0,0,0) scale(1);
+  transform-origin:center center;
+  will-change:transform;
 }
 .modal img{
   display:block;
@@ -590,10 +603,12 @@ body.modal-open{overflow:hidden}
   object-fit:contain;
   user-select:none;
   -webkit-user-drag:none;
+  cursor:zoom-in;
 }
-.modal-control{
-  position:absolute;
-  z-index:3;
+.modal.zoomed img{cursor:grab}
+.modal.dragging img{cursor:grabbing}
+.modal-control,
+.zoom-toolbar button{
   display:grid;
   place-items:center;
   border:1px solid rgba(255,255,255,.25);
@@ -602,6 +617,7 @@ body.modal-open{overflow:hidden}
   cursor:pointer;
   backdrop-filter:blur(8px);
 }
+.modal-control{position:absolute;z-index:4}
 .modal-close{
   top:16px;
   right:16px;
@@ -610,6 +626,35 @@ body.modal-open{overflow:hidden}
   border-radius:12px;
   font-size:20px;
 }
+.zoom-toolbar{
+  position:absolute;
+  top:16px;
+  left:50%;
+  z-index:4;
+  transform:translateX(-50%);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:5px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:14px;
+  background:rgba(0,0,0,.48);
+  backdrop-filter:blur(8px);
+}
+.zoom-toolbar button{
+  position:static;
+  min-width:38px;
+  height:38px;
+  padding:0 11px;
+  border-radius:10px;
+  font:inherit;
+  font-weight:800;
+}
+.zoom-toolbar button:hover,
+.modal-control:hover{background:rgba(255,255,255,.14)}
+.zoom-toolbar button:disabled{opacity:.35;cursor:default}
+.zoom-value{min-width:54px;text-align:center;font-size:12px;font-weight:800}
+.download-btn{white-space:nowrap}
 .modal-nav{
   top:50%;
   transform:translateY(-50%);
@@ -625,6 +670,7 @@ body.modal-open{overflow:hidden}
   position:absolute;
   left:50%;
   bottom:16px;
+  z-index:4;
   transform:translateX(-50%);
   max-width:min(720px,calc(100vw - 40px));
   padding:9px 14px;
@@ -636,8 +682,11 @@ body.modal-open{overflow:hidden}
   font-size:13px;
   backdrop-filter:blur(8px);
 }
-@media(max-width:650px){
-  .modal-inner{padding:64px 12px 88px}
+@media(max-width:760px){
+  .modal-inner{padding:72px 10px 88px}
+  .zoom-toolbar{left:10px;right:62px;transform:none;justify-content:center}
+  .zoom-toolbar button{min-width:34px;height:36px;padding:0 9px}
+  .download-btn .download-text{display:none}
   .modal-nav{
     top:auto;
     bottom:17px;
@@ -1148,7 +1197,16 @@ footer{
 <!-- MODAL -->
 <div id="modal" class="modal" role="dialog" aria-modal="true" aria-label="Preview gambar">
   <div id="modalInner" class="modal-inner">
-    <img id="modalImg" alt="Preview dokumentasi">
+    <div id="modalZoomLayer" class="zoom-layer">
+      <img id="modalImg" alt="Preview dokumentasi" draggable="false">
+    </div>
+  </div>
+  <div class="zoom-toolbar" role="toolbar" aria-label="Kontrol zoom">
+    <button id="modalZoomOut" type="button" aria-label="Perkecil" title="Perkecil">−</button>
+    <span id="modalZoomValue" class="zoom-value" aria-live="polite">100%</span>
+    <button id="modalZoomIn" type="button" aria-label="Perbesar" title="Perbesar">+</button>
+    <button id="modalZoomReset" type="button" aria-label="Kembalikan ukuran pas" title="Ukuran pas">Pas</button>
+    <button id="modalDownload" class="download-btn" type="button" aria-label="Download media" title="Download media">⇩ <span class="download-text">Download</span></button>
   </div>
   <button id="modalClose" class="modal-control modal-close" type="button" aria-label="Tutup">✕</button>
   <button id="modalPrev" class="modal-control modal-nav modal-prev" type="button" aria-label="Media sebelumnya">‹</button>
@@ -1587,90 +1645,295 @@ function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
 }
 
-/* ===== MODAL GALERI: FIT PENUH + KANAN/KIRI + SWIPE ===== */
+/* ===== MODAL GALERI: FIT PENUH + ZOOM + PAN + SWIPE + DOWNLOAD ===== */
 let currentGalleryItems = [];
 let currentGalleryIndex = -1;
-let galleryTouchStartX = 0;
-let galleryTouchStartY = 0;
+
+const galleryModal = document.getElementById("modal");
+const galleryStage = document.getElementById("modalInner");
+const galleryZoomLayer = document.getElementById("modalZoomLayer");
+const galleryModalImg = document.getElementById("modalImg");
+const galleryZoomOut = document.getElementById("modalZoomOut");
+const galleryZoomIn = document.getElementById("modalZoomIn");
+const galleryZoomReset = document.getElementById("modalZoomReset");
+const galleryZoomValue = document.getElementById("modalZoomValue");
+const galleryDownload = document.getElementById("modalDownload");
+
+const GALLERY_MIN_ZOOM = .5;
+const GALLERY_MAX_ZOOM = 5;
+const GALLERY_ZOOM_STEP = .25;
+let galleryZoomScale = 1;
+let galleryPanX = 0;
+let galleryPanY = 0;
+let gallerySwipeStartX = 0;
+let gallerySwipeStartY = 0;
+let galleryGestureMoved = false;
+let galleryLastTapTime = 0;
+let galleryLastTapX = 0;
+let galleryLastTapY = 0;
+const galleryPointers = new Map();
+let galleryDragPointerId = null;
+let galleryPinchStartDistance = 0;
+let galleryPinchStartScale = 1;
 
 function galleryMediaUrl(file){
   return String(file || "").startsWith("http") ? file : "./" + String(file || "").replace(/^\/+/, "");
 }
 
+function galleryClamp(value,min,max){
+  return Math.min(max,Math.max(min,value));
+}
+
+function galleryViewportSize(){
+  const styles=getComputedStyle(galleryStage);
+  return {
+    width:galleryStage.clientWidth-parseFloat(styles.paddingLeft)-parseFloat(styles.paddingRight),
+    height:galleryStage.clientHeight-parseFloat(styles.paddingTop)-parseFloat(styles.paddingBottom)
+  };
+}
+
+function galleryClampPan(){
+  if(!galleryModalImg.clientWidth || !galleryModalImg.clientHeight) return;
+  const viewport=galleryViewportSize();
+  const maxX=Math.max(0,(galleryModalImg.clientWidth*galleryZoomScale-viewport.width)/2);
+  const maxY=Math.max(0,(galleryModalImg.clientHeight*galleryZoomScale-viewport.height)/2);
+  galleryPanX=galleryClamp(galleryPanX,-maxX,maxX);
+  galleryPanY=galleryClamp(galleryPanY,-maxY,maxY);
+}
+
+function galleryApplyZoom(){
+  galleryClampPan();
+  galleryZoomLayer.style.transform=`translate3d(${galleryPanX}px,${galleryPanY}px,0) scale(${galleryZoomScale})`;
+  galleryZoomValue.textContent=`${Math.round(galleryZoomScale*100)}%`;
+  galleryZoomOut.disabled=galleryZoomScale<=GALLERY_MIN_ZOOM+.001;
+  galleryZoomIn.disabled=galleryZoomScale>=GALLERY_MAX_ZOOM-.001;
+  galleryModal.classList.toggle("zoomed",galleryZoomScale>1.001);
+}
+
+function gallerySetZoom(nextScale,clientX=null,clientY=null){
+  const oldScale=galleryZoomScale;
+  const next=galleryClamp(nextScale,GALLERY_MIN_ZOOM,GALLERY_MAX_ZOOM);
+  if(clientX!==null && clientY!==null && oldScale>0){
+    const rect=galleryStage.getBoundingClientRect();
+    const cursorX=clientX-(rect.left+rect.width/2);
+    const cursorY=clientY-(rect.top+rect.height/2);
+    const ratio=next/oldScale;
+    galleryPanX=cursorX-(cursorX-galleryPanX)*ratio;
+    galleryPanY=cursorY-(cursorY-galleryPanY)*ratio;
+  }
+  galleryZoomScale=next;
+  if(Math.abs(galleryZoomScale-1)<.001){
+    galleryPanX=0;
+    galleryPanY=0;
+  }
+  galleryApplyZoom();
+}
+
+function galleryResetZoom(){
+  galleryZoomScale=1;
+  galleryPanX=0;
+  galleryPanY=0;
+  galleryApplyZoom();
+}
+
+function galleryToggleZoom(clientX,clientY){
+  gallerySetZoom(galleryZoomScale>1.001 ? 1 : 2.5,clientX,clientY);
+}
+
+function galleryPointerDistance(){
+  const points=[...galleryPointers.values()];
+  if(points.length<2) return 0;
+  return Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);
+}
+
 function updateGalleryModal(){
-  const item = currentGalleryItems[currentGalleryIndex];
+  const item=currentGalleryItems[currentGalleryIndex];
   if(!item) return;
 
-  const img = document.getElementById("modalImg");
-  img.src = galleryMediaUrl(item.file);
-  img.alt = item.title || "Preview dokumentasi";
-  document.getElementById("modalCaption").textContent =
-    `${currentGalleryIndex + 1} / ${currentGalleryItems.length} • ${item.title || "Untitled"}`;
+  galleryResetZoom();
+  galleryModalImg.src=galleryMediaUrl(item.file);
+  galleryModalImg.alt=item.title || "Preview dokumentasi";
+  document.getElementById("modalCaption").textContent=
+    `${currentGalleryIndex+1} / ${currentGalleryItems.length} • ${item.title || "Untitled"}`;
 
-  const onlyOne = currentGalleryItems.length <= 1;
-  document.getElementById("modalPrev").disabled = onlyOne;
-  document.getElementById("modalNext").disabled = onlyOne;
+  const onlyOne=currentGalleryItems.length<=1;
+  document.getElementById("modalPrev").disabled=onlyOne;
+  document.getElementById("modalNext").disabled=onlyOne;
 
   if(!onlyOne){
-    const prev = currentGalleryItems[(currentGalleryIndex - 1 + currentGalleryItems.length) % currentGalleryItems.length];
-    const next = currentGalleryItems[(currentGalleryIndex + 1) % currentGalleryItems.length];
+    const prev=currentGalleryItems[(currentGalleryIndex-1+currentGalleryItems.length)%currentGalleryItems.length];
+    const next=currentGalleryItems[(currentGalleryIndex+1)%currentGalleryItems.length];
     [prev,next].forEach(entry=>{
-      const preload = new Image();
-      preload.src = galleryMediaUrl(entry.file);
+      const preload=new Image();
+      preload.src=galleryMediaUrl(entry.file);
     });
   }
 }
 
 function openModal(index){
-  currentGalleryIndex = index;
+  currentGalleryIndex=index;
   updateGalleryModal();
-  document.getElementById("modal").classList.add("open");
+  galleryModal.classList.add("open");
   document.body.classList.add("modal-open");
   document.getElementById("modalClose").focus();
 }
 
 function closeModal(){
-  document.getElementById("modal").classList.remove("open");
+  galleryModal.classList.remove("open","zoomed","dragging");
   document.body.classList.remove("modal-open");
-  document.getElementById("modalImg").removeAttribute("src");
-  currentGalleryIndex = -1;
+  galleryModalImg.removeAttribute("src");
+  galleryPointers.clear();
+  currentGalleryIndex=-1;
+  galleryResetZoom();
 }
 
 function showGalleryRelative(step){
-  if(currentGalleryItems.length <= 1 || currentGalleryIndex < 0) return;
-  currentGalleryIndex = (currentGalleryIndex + step + currentGalleryItems.length) % currentGalleryItems.length;
+  if(currentGalleryItems.length<=1 || currentGalleryIndex<0) return;
+  currentGalleryIndex=(currentGalleryIndex+step+currentGalleryItems.length)%currentGalleryItems.length;
   updateGalleryModal();
+}
+
+async function downloadGalleryCurrent(){
+  const item=currentGalleryItems[currentGalleryIndex];
+  if(!item) return;
+  const url=galleryMediaUrl(item.file);
+  const filename=decodeURIComponent(String(item.file).split("/").pop().split("?")[0]) || "dokumentasi";
+  galleryDownload.disabled=true;
+  try{
+    const response=await fetch(url);
+    if(!response.ok) throw new Error(`HTTP ${response.status}`);
+    const blobUrl=URL.createObjectURL(await response.blob());
+    const link=document.createElement("a");
+    link.href=blobUrl;
+    link.download=filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(()=>URL.revokeObjectURL(blobUrl),1500);
+  }catch(error){
+    console.warn("Download langsung gagal, membuka file asli.",error);
+    const link=document.createElement("a");
+    link.href=url;
+    link.download=filename;
+    link.target="_blank";
+    link.rel="noopener";
+    link.click();
+  }finally{
+    galleryDownload.disabled=false;
+  }
 }
 
 document.getElementById("modalClose").addEventListener("click",closeModal);
 document.getElementById("modalPrev").addEventListener("click",()=>showGalleryRelative(-1));
 document.getElementById("modalNext").addEventListener("click",()=>showGalleryRelative(1));
-
-document.addEventListener("keydown",(e)=>{
-  const modal = document.getElementById("modal");
-  if(!modal.classList.contains("open")) return;
+galleryZoomOut.addEventListener("click",()=>gallerySetZoom(galleryZoomScale-GALLERY_ZOOM_STEP));
+galleryZoomIn.addEventListener("click",()=>gallerySetZoom(galleryZoomScale+GALLERY_ZOOM_STEP));
+galleryZoomReset.addEventListener("click",galleryResetZoom);
+galleryDownload.addEventListener("click",downloadGalleryCurrent);
+galleryModalImg.addEventListener("load",galleryApplyZoom);
+document.addEventListener("keydown",e=>{
+  if(!galleryModal.classList.contains("open")) return;
   if(e.key==="Escape") closeModal();
-  if(e.key==="ArrowLeft") showGalleryRelative(-1);
-  if(e.key==="ArrowRight") showGalleryRelative(1);
+  if(e.key==="ArrowLeft" && galleryZoomScale<=1.001) showGalleryRelative(-1);
+  if(e.key==="ArrowRight" && galleryZoomScale<=1.001) showGalleryRelative(1);
+  if(e.key==="+" || e.key==="=") gallerySetZoom(galleryZoomScale+GALLERY_ZOOM_STEP);
+  if(e.key==="-") gallerySetZoom(galleryZoomScale-GALLERY_ZOOM_STEP);
+  if(e.key==="0") galleryResetZoom();
 });
 
-document.getElementById("modal").addEventListener("click",(e)=>{
-  if(e.target.id==="modal" || e.target.id==="modalInner") closeModal();
+galleryModal.addEventListener("click",e=>{
+  if(e.target===galleryModal && !galleryGestureMoved) closeModal();
 });
 
-document.getElementById("modal").addEventListener("touchstart",(e)=>{
-  const touch=e.changedTouches[0];
-  galleryTouchStartX=touch.clientX;
-  galleryTouchStartY=touch.clientY;
-},{passive:true});
+galleryStage.addEventListener("wheel",e=>{
+  if(!galleryModal.classList.contains("open")) return;
+  e.preventDefault();
+  gallerySetZoom(galleryZoomScale+(e.deltaY<0 ? GALLERY_ZOOM_STEP : -GALLERY_ZOOM_STEP),e.clientX,e.clientY);
+},{passive:false});
 
-document.getElementById("modal").addEventListener("touchend",(e)=>{
-  const touch=e.changedTouches[0];
-  const dx=touch.clientX-galleryTouchStartX;
-  const dy=touch.clientY-galleryTouchStartY;
-  if(Math.abs(dx)<50 || Math.abs(dx)<Math.abs(dy)) return;
-  showGalleryRelative(dx<0 ? 1 : -1);
-},{passive:true});
+galleryStage.addEventListener("pointerdown",e=>{
+  if(e.button!==undefined && e.button!==0) return;
+  try{galleryStage.setPointerCapture?.(e.pointerId);}catch(error){}
+  galleryPointers.set(e.pointerId,{x:e.clientX,y:e.clientY,type:e.pointerType});
+  galleryGestureMoved=false;
+
+  if(galleryPointers.size===1){
+    galleryDragPointerId=e.pointerId;
+    gallerySwipeStartX=e.clientX;
+    gallerySwipeStartY=e.clientY;
+    if(galleryZoomScale>1.001) galleryModal.classList.add("dragging");
+  }else if(galleryPointers.size===2){
+    galleryPinchStartDistance=galleryPointerDistance();
+    galleryPinchStartScale=galleryZoomScale;
+    galleryModal.classList.add("dragging");
+  }
+});
+
+galleryStage.addEventListener("pointermove",e=>{
+  if(!galleryPointers.has(e.pointerId)) return;
+  const previous=galleryPointers.get(e.pointerId);
+  galleryPointers.set(e.pointerId,{x:e.clientX,y:e.clientY,type:e.pointerType});
+
+  if(galleryPointers.size>=2){
+    const distance=galleryPointerDistance();
+    if(galleryPinchStartDistance>0) gallerySetZoom(galleryPinchStartScale*distance/galleryPinchStartDistance);
+    galleryGestureMoved=true;
+    return;
+  }
+
+  if(e.pointerId===galleryDragPointerId){
+    if(Math.abs(e.clientX-gallerySwipeStartX)>4 || Math.abs(e.clientY-gallerySwipeStartY)>4) galleryGestureMoved=true;
+    if(galleryZoomScale>1.001){
+      galleryPanX+=e.clientX-previous.x;
+      galleryPanY+=e.clientY-previous.y;
+      galleryApplyZoom();
+    }
+  }
+});
+
+function finishGalleryPointer(e){
+  if(!galleryPointers.has(e.pointerId)) return;
+  const storedPoint=galleryPointers.get(e.pointerId);
+  const point={
+    x:Number.isFinite(e.clientX) ? e.clientX : storedPoint.x,
+    y:Number.isFinite(e.clientY) ? e.clientY : storedPoint.y,
+    type:e.pointerType || storedPoint.type
+  };
+  galleryPointers.delete(e.pointerId);
+
+  if(galleryPointers.size<2) galleryPinchStartDistance=0;
+  if(galleryPointers.size===0){
+    galleryModal.classList.remove("dragging");
+    const dx=point.x-gallerySwipeStartX;
+    const dy=point.y-gallerySwipeStartY;
+
+    if(!galleryGestureMoved && (point.type==="touch" || point.type==="mouse")){
+      const now=Date.now();
+      if(now-galleryLastTapTime<320 && Math.hypot(point.x-galleryLastTapX,point.y-galleryLastTapY)<36){
+        galleryToggleZoom(point.x,point.y);
+        galleryLastTapTime=0;
+      }else{
+        galleryLastTapTime=now;
+        galleryLastTapX=point.x;
+        galleryLastTapY=point.y;
+      }
+    }else if(galleryZoomScale<=1.001 && Math.abs(dx)>=50 && Math.abs(dx)>Math.abs(dy)){
+      showGalleryRelative(dx<0 ? 1 : -1);
+    }
+
+    galleryDragPointerId=null;
+    setTimeout(()=>{galleryGestureMoved=false;},0);
+  }else{
+    const remaining=[...galleryPointers.entries()][0];
+    galleryDragPointerId=remaining[0];
+    gallerySwipeStartX=remaining[1].x;
+    gallerySwipeStartY=remaining[1].y;
+  }
+}
+
+galleryStage.addEventListener("pointerup",finishGalleryPointer);
+galleryStage.addEventListener("pointercancel",finishGalleryPointer);
+window.addEventListener("resize",galleryApplyZoom);
 
 /* ===== CONTACT -> WhatsApp template ===== */
 const WA_NUMBER = "6282252509320";

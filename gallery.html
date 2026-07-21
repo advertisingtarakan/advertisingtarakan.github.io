@@ -100,14 +100,13 @@
 
     .title { margin-top: 6px; font-weight: bold; font-size: 13px; }
 
-    /* Preview: media langsung terlihat penuh, tanpa perlu zoom out */
+    /* Preview penuh + zoom, pan, swipe, dan download */
     .modal {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,.94);
       display: none;
       z-index: 999;
-      touch-action: pan-y;
     }
 
     .modal.open { display: block; }
@@ -118,7 +117,22 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 68px 82px 86px;
+      overflow: hidden;
+      padding: 76px 82px 88px;
+      touch-action: none;
+    }
+
+    .zoom-layer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      transform: translate3d(0,0,0) scale(1);
+      transform-origin: center center;
+      will-change: transform;
     }
 
     .modal img {
@@ -130,18 +144,26 @@
       object-fit: contain;
       user-select: none;
       -webkit-user-drag: none;
+      cursor: zoom-in;
     }
 
-    .modal-control {
-      position: absolute;
-      z-index: 3;
+    .modal.zoomed img { cursor: grab; }
+    .modal.dragging img { cursor: grabbing; }
+
+    .modal-control,
+    .zoom-toolbar button {
       border: 1px solid rgba(255,255,255,.25);
-      background: rgba(0,0,0,.55);
+      background: rgba(0,0,0,.58);
       color: #fff;
       cursor: pointer;
       display: grid;
       place-items: center;
       backdrop-filter: blur(8px);
+    }
+
+    .modal-control {
+      position: absolute;
+      z-index: 4;
     }
 
     .close {
@@ -152,6 +174,38 @@
       border-radius: 12px;
       font-size: 20px;
     }
+
+    .zoom-toolbar {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      z-index: 4;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 14px;
+      background: rgba(0,0,0,.48);
+      backdrop-filter: blur(8px);
+    }
+
+    .zoom-toolbar button {
+      position: static;
+      min-width: 38px;
+      height: 38px;
+      padding: 0 11px;
+      border-radius: 10px;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .zoom-toolbar button:hover,
+    .modal-control:hover { background: rgba(255,255,255,.14); }
+    .zoom-toolbar button:disabled { opacity: .35; cursor: default; }
+    .zoom-value { min-width: 54px; text-align: center; font-size: 12px; font-weight: 800; }
+    .download-btn { white-space: nowrap; }
 
     .nav {
       top: 50%;
@@ -170,6 +224,7 @@
       position: absolute;
       left: 50%;
       bottom: 16px;
+      z-index: 4;
       transform: translateX(-50%);
       max-width: min(720px, calc(100vw - 40px));
       padding: 9px 14px;
@@ -182,8 +237,11 @@
       backdrop-filter: blur(8px);
     }
 
-    @media (max-width: 650px) {
-      .modal-stage { padding: 64px 12px 88px; }
+    @media (max-width: 760px) {
+      .modal-stage { padding: 72px 10px 88px; }
+      .zoom-toolbar { left: 10px; right: 62px; transform: none; justify-content: center; }
+      .zoom-toolbar button { min-width: 34px; height: 36px; padding: 0 9px; }
+      .download-btn .download-text { display: none; }
       .nav {
         top: auto;
         bottom: 17px;
@@ -203,7 +261,7 @@
 <body>
 <header>
   <h1>Galeri Dokumentasi</h1>
-  <p>Klik gambar untuk melihat media secara penuh. Swipe atau gunakan tombol kanan/kiri.</p>
+  <p>Klik gambar untuk melihat media penuh. Double-click/double-tap, cubit layar, atau tombol +/− untuk zoom. Geser saat diperbesar; swipe kanan/kiri saat ukuran pas.</p>
 
   <div class="controls">
     <select id="category"></select>
@@ -218,7 +276,16 @@
 
 <div id="modal" class="modal" role="dialog" aria-modal="true" aria-label="Preview dokumentasi">
   <div id="modalStage" class="modal-stage">
-    <img id="modalImg" alt="Preview dokumentasi">
+    <div id="zoomLayer" class="zoom-layer">
+      <img id="modalImg" alt="Preview dokumentasi" draggable="false">
+    </div>
+  </div>
+  <div class="zoom-toolbar" role="toolbar" aria-label="Kontrol zoom">
+    <button id="zoomOutBtn" type="button" aria-label="Perkecil" title="Perkecil">−</button>
+    <span id="zoomValue" class="zoom-value" aria-live="polite">100%</span>
+    <button id="zoomInBtn" type="button" aria-label="Perbesar" title="Perbesar">+</button>
+    <button id="zoomResetBtn" type="button" aria-label="Kembalikan ukuran pas" title="Ukuran pas">Pas</button>
+    <button id="downloadBtn" class="download-btn" type="button" aria-label="Download media" title="Download media">⇩ <span class="download-text">Download</span></button>
   </div>
   <button id="closeBtn" class="modal-control close" type="button" aria-label="Tutup">✕</button>
   <button id="prevBtn" class="modal-control nav prev" type="button" aria-label="Media sebelumnya">‹</button>
@@ -236,17 +303,40 @@
   const countEl = document.getElementById("count");
   const modal = document.getElementById("modal");
   const modalStage = document.getElementById("modalStage");
+  const zoomLayer = document.getElementById("zoomLayer");
   const modalImg = document.getElementById("modalImg");
   const modalCaption = document.getElementById("modalCaption");
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
+  const zoomOutBtn = document.getElementById("zoomOutBtn");
+  const zoomInBtn = document.getElementById("zoomInBtn");
+  const zoomResetBtn = document.getElementById("zoomResetBtn");
+  const zoomValue = document.getElementById("zoomValue");
+  const downloadBtn = document.getElementById("downloadBtn");
+
+  const MIN_ZOOM = 0.5;
+  const MAX_ZOOM = 5;
+  const ZOOM_STEP = 0.25;
 
   let items = [];
   let categories = [];
   let visibleItems = [];
   let currentIndex = -1;
-  let touchStartX = 0;
-  let touchStartY = 0;
+  let zoomScale = 1;
+  let panX = 0;
+  let panY = 0;
+  let swipeStartX = 0;
+  let swipeStartY = 0;
+  let gestureMoved = false;
+  let lastTapTime = 0;
+  let lastTapX = 0;
+  let lastTapY = 0;
+  const activePointers = new Map();
+  let dragPointerId = null;
+  let dragLastX = 0;
+  let dragLastY = 0;
+  let pinchStartDistance = 0;
+  let pinchStartScale = 1;
 
   async function loadJSON(url) {
     const bust = `v=${Date.now()}`;
@@ -315,9 +405,76 @@
     });
   }
 
+  function clamp(value, min, max){
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function viewportSize(){
+    const styles = getComputedStyle(modalStage);
+    return {
+      width: modalStage.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight),
+      height: modalStage.clientHeight - parseFloat(styles.paddingTop) - parseFloat(styles.paddingBottom)
+    };
+  }
+
+  function clampPan(){
+    if(!modalImg.clientWidth || !modalImg.clientHeight) return;
+    const viewport = viewportSize();
+    const maxX = Math.max(0, (modalImg.clientWidth * zoomScale - viewport.width) / 2);
+    const maxY = Math.max(0, (modalImg.clientHeight * zoomScale - viewport.height) / 2);
+    panX = clamp(panX, -maxX, maxX);
+    panY = clamp(panY, -maxY, maxY);
+  }
+
+  function applyZoom(){
+    clampPan();
+    zoomLayer.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(${zoomScale})`;
+    zoomValue.textContent = `${Math.round(zoomScale * 100)}%`;
+    zoomOutBtn.disabled = zoomScale <= MIN_ZOOM + 0.001;
+    zoomInBtn.disabled = zoomScale >= MAX_ZOOM - 0.001;
+    modal.classList.toggle("zoomed", zoomScale > 1.001);
+  }
+
+  function setZoom(nextScale, clientX = null, clientY = null){
+    const oldScale = zoomScale;
+    const next = clamp(nextScale, MIN_ZOOM, MAX_ZOOM);
+    if(clientX !== null && clientY !== null && oldScale > 0){
+      const rect = modalStage.getBoundingClientRect();
+      const cursorX = clientX - (rect.left + rect.width / 2);
+      const cursorY = clientY - (rect.top + rect.height / 2);
+      const ratio = next / oldScale;
+      panX = cursorX - (cursorX - panX) * ratio;
+      panY = cursorY - (cursorY - panY) * ratio;
+    }
+    zoomScale = next;
+    if(Math.abs(zoomScale - 1) < 0.001){
+      panX = 0;
+      panY = 0;
+    }
+    applyZoom();
+  }
+
+  function resetZoom(){
+    zoomScale = 1;
+    panX = 0;
+    panY = 0;
+    applyZoom();
+  }
+
+  function toggleZoom(clientX, clientY){
+    setZoom(zoomScale > 1.001 ? 1 : 2.5, clientX, clientY);
+  }
+
+  function pointerDistance(){
+    const points = [...activePointers.values()];
+    if(points.length < 2) return 0;
+    return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+  }
+
   function updateModal(){
     if(currentIndex < 0 || !visibleItems[currentIndex]) return;
     const item = visibleItems[currentIndex];
+    resetZoom();
     modalImg.src = mediaUrl(item.file);
     modalImg.alt = item.title || "Preview dokumentasi";
     modalCaption.textContent = `${currentIndex + 1} / ${visibleItems.length} • ${item.title || "Untitled"}`;
@@ -345,16 +502,48 @@
   }
 
   function closeModal() {
-    modal.classList.remove("open");
+    modal.classList.remove("open", "zoomed", "dragging");
     document.body.classList.remove("modal-open");
     modalImg.removeAttribute("src");
+    activePointers.clear();
     currentIndex = -1;
+    resetZoom();
   }
 
   function showRelative(step){
     if(visibleItems.length <= 1 || currentIndex < 0) return;
     currentIndex = (currentIndex + step + visibleItems.length) % visibleItems.length;
     updateModal();
+  }
+
+  async function downloadCurrent(){
+    const item = visibleItems[currentIndex];
+    if(!item) return;
+    const url = mediaUrl(item.file);
+    const filename = decodeURIComponent(String(item.file).split("/").pop().split("?")[0]) || "dokumentasi";
+    downloadBtn.disabled = true;
+    try{
+      const response = await fetch(url);
+      if(!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blobUrl = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
+    }catch(error){
+      console.warn("Download langsung gagal, membuka file asli.", error);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.click();
+    }finally{
+      downloadBtn.disabled = false;
+    }
   }
 
   async function init() {
@@ -386,31 +575,116 @@
   document.getElementById("closeBtn").addEventListener("click", closeModal);
   prevBtn.addEventListener("click", () => showRelative(-1));
   nextBtn.addEventListener("click", () => showRelative(1));
-
+  zoomOutBtn.addEventListener("click", () => setZoom(zoomScale - ZOOM_STEP));
+  zoomInBtn.addEventListener("click", () => setZoom(zoomScale + ZOOM_STEP));
+  zoomResetBtn.addEventListener("click", resetZoom);
+  downloadBtn.addEventListener("click", downloadCurrent);
+  modalImg.addEventListener("load", applyZoom);
   modal.addEventListener("click", e => {
-    if(e.target === modal || e.target === modalStage) closeModal();
+    if(e.target === modal && !gestureMoved) closeModal();
   });
 
   document.addEventListener("keydown", e => {
     if(!modal.classList.contains("open")) return;
     if(e.key === "Escape") closeModal();
-    if(e.key === "ArrowLeft") showRelative(-1);
-    if(e.key === "ArrowRight") showRelative(1);
+    if(e.key === "ArrowLeft" && zoomScale <= 1.001) showRelative(-1);
+    if(e.key === "ArrowRight" && zoomScale <= 1.001) showRelative(1);
+    if(e.key === "+" || e.key === "=") setZoom(zoomScale + ZOOM_STEP);
+    if(e.key === "-") setZoom(zoomScale - ZOOM_STEP);
+    if(e.key === "0") resetZoom();
   });
 
-  modal.addEventListener("touchstart", e => {
-    const touch = e.changedTouches[0];
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-  }, {passive:true});
+  modalStage.addEventListener("wheel", e => {
+    if(!modal.classList.contains("open")) return;
+    e.preventDefault();
+    setZoom(zoomScale + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP), e.clientX, e.clientY);
+  }, {passive:false});
 
-  modal.addEventListener("touchend", e => {
-    const touch = e.changedTouches[0];
-    const dx = touch.clientX - touchStartX;
-    const dy = touch.clientY - touchStartY;
-    if(Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-    showRelative(dx < 0 ? 1 : -1);
-  }, {passive:true});
+  modalStage.addEventListener("pointerdown", e => {
+    if(e.button !== undefined && e.button !== 0) return;
+    try{ modalStage.setPointerCapture?.(e.pointerId); }catch(error){}
+    activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY, type:e.pointerType});
+    gestureMoved = false;
+
+    if(activePointers.size === 1){
+      dragPointerId = e.pointerId;
+      dragLastX = swipeStartX = e.clientX;
+      dragLastY = swipeStartY = e.clientY;
+      if(zoomScale > 1.001) modal.classList.add("dragging");
+    }else if(activePointers.size === 2){
+      pinchStartDistance = pointerDistance();
+      pinchStartScale = zoomScale;
+      modal.classList.add("dragging");
+    }
+  });
+
+  modalStage.addEventListener("pointermove", e => {
+    if(!activePointers.has(e.pointerId)) return;
+    const previous = activePointers.get(e.pointerId);
+    activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY, type:e.pointerType});
+
+    if(activePointers.size >= 2){
+      const distance = pointerDistance();
+      if(pinchStartDistance > 0) setZoom(pinchStartScale * distance / pinchStartDistance);
+      gestureMoved = true;
+      return;
+    }
+
+    if(e.pointerId === dragPointerId){
+      if(Math.abs(e.clientX - swipeStartX) > 4 || Math.abs(e.clientY - swipeStartY) > 4) gestureMoved = true;
+      if(zoomScale > 1.001){
+        panX += e.clientX - previous.x;
+        panY += e.clientY - previous.y;
+        dragLastX = e.clientX;
+        dragLastY = e.clientY;
+        applyZoom();
+      }
+    }
+  });
+
+  function finishPointer(e){
+    if(!activePointers.has(e.pointerId)) return;
+    const storedPoint = activePointers.get(e.pointerId);
+    const point = {
+      x: Number.isFinite(e.clientX) ? e.clientX : storedPoint.x,
+      y: Number.isFinite(e.clientY) ? e.clientY : storedPoint.y,
+      type: e.pointerType || storedPoint.type
+    };
+    activePointers.delete(e.pointerId);
+
+    if(activePointers.size < 2) pinchStartDistance = 0;
+    if(activePointers.size === 0){
+      modal.classList.remove("dragging");
+      const dx = point.x - swipeStartX;
+      const dy = point.y - swipeStartY;
+
+      if(!gestureMoved && (point.type === "touch" || point.type === "mouse")){
+        const now = Date.now();
+        if(now - lastTapTime < 320 && Math.hypot(point.x - lastTapX, point.y - lastTapY) < 36){
+          toggleZoom(point.x, point.y);
+          lastTapTime = 0;
+        }else{
+          lastTapTime = now;
+          lastTapX = point.x;
+          lastTapY = point.y;
+        }
+      }else if(zoomScale <= 1.001 && Math.abs(dx) >= 50 && Math.abs(dx) > Math.abs(dy)){
+        showRelative(dx < 0 ? 1 : -1);
+      }
+
+      dragPointerId = null;
+      setTimeout(() => { gestureMoved = false; }, 0);
+    }else{
+      const remaining = [...activePointers.entries()][0];
+      dragPointerId = remaining[0];
+      dragLastX = swipeStartX = remaining[1].x;
+      dragLastY = swipeStartY = remaining[1].y;
+    }
+  }
+
+  modalStage.addEventListener("pointerup", finishPointer);
+  modalStage.addEventListener("pointercancel", finishPointer);
+  window.addEventListener("resize", applyZoom);
 
   init();
 </script>
