@@ -228,6 +228,102 @@
     }
     .download-text { display: block; line-height: 1; }
 
+    /* Menu admin sengaja hanya muncul saat klik kanan tombol Download. */
+    .download-context-menu {
+      position: fixed;
+      z-index: 1200;
+      display: none;
+      min-width: 150px;
+      padding: 6px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 11px;
+      background: rgba(10,12,18,.98);
+      box-shadow: 0 14px 38px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+    }
+
+    .download-context-menu.open { display: block; }
+
+    .download-context-menu button {
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: transparent;
+      color: #ff8585;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      text-align: left;
+    }
+
+    .download-context-menu button:hover,
+    .download-context-menu button:focus-visible {
+      outline: none;
+      background: rgba(255,107,107,.14);
+    }
+
+    .delete-dialog {
+      position: fixed;
+      inset: 0;
+      z-index: 1300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(5px);
+    }
+
+    .delete-dialog.open { display: flex; }
+
+    .delete-panel {
+      width: min(440px, 100%);
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 16px;
+      background: #111622;
+      box-shadow: 0 20px 60px rgba(0,0,0,.58);
+    }
+
+    .delete-panel h2 { margin: 0 0 7px; font-size: 19px; }
+    .delete-panel p { margin: 0 0 14px; color: #b9c1d6; line-height: 1.45; }
+    .delete-target {
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #090d15;
+      color: #e7ebf5;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+    .delete-panel label { display: block; margin: 11px 0 6px; font-size: 12px; font-weight: 800; }
+    .delete-panel input { width: 100%; margin: 0; }
+    .delete-panel details { margin-top: 12px; }
+    .delete-panel summary { color: #c8d0e5; cursor: pointer; font-size: 12px; }
+    .delete-note { margin-top: 7px !important; font-size: 11px !important; color: #9ca8c1 !important; }
+    .delete-status {
+      min-height: 19px;
+      margin: 12px 0 0;
+      color: #ff8585;
+      font-size: 12px;
+    }
+    .delete-status.ok { color: #57d99a; }
+    .delete-status.busy { color: #ffd166; }
+    .delete-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 12px; }
+    .delete-actions button {
+      min-height: 42px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 10px;
+      background: #171d2b;
+      color: #fff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+    }
+    .delete-actions .confirm-delete { background: #8f2630; border-color: #b33b47; }
+    .delete-actions button:disabled { opacity: .5; cursor: wait; }
+
     .nav {
       top: 50%;
       transform: translateY(-50%);
@@ -315,9 +411,46 @@
   <div id="modalCaption" class="modal-caption"></div>
 </div>
 
+<div id="downloadContextMenu" class="download-context-menu" role="menu" aria-hidden="true">
+  <button id="deleteMediaMenuItem" type="button" role="menuitem">🗑️ Delete</button>
+</div>
+
+<div id="deleteDialog" class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteDialogTitle" aria-hidden="true">
+  <div class="delete-panel">
+    <h2 id="deleteDialogTitle">Hapus media dari galeri?</h2>
+    <p>Media dan entri manifest akan dihapus dari repository GitHub.</p>
+    <div id="deleteTarget" class="delete-target"></div>
+
+    <label for="deletePassword">Password upload</label>
+    <input id="deletePassword" type="password" autocomplete="current-password" placeholder="Pakai password yang sama dengan updoc">
+
+    <details>
+      <summary>Atau gunakan token GitHub manual</summary>
+      <label for="deleteToken">GitHub Personal Access Token</label>
+      <input id="deleteToken" type="password" autocomplete="off" placeholder="github_pat_... atau ghp_...">
+      <p class="delete-note">Token manual dipakai langsung dan tidak disimpan. Jika token sudah disimpan melalui updoc, cukup isi password.</p>
+    </details>
+
+    <div id="deleteStatus" class="delete-status" aria-live="polite"></div>
+    <div class="delete-actions">
+      <button id="cancelDeleteBtn" type="button">Batal</button>
+      <button id="confirmDeleteBtn" class="confirm-delete" type="button">Hapus Permanen</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const CONFIG_URL = "gallery-config.json";
   const MANIFEST_URL = "gallery-manifest.json";
+  const GITHUB = {
+    owner: "advertisingtarakan",
+    repo: "advertisingtarakan.github.io",
+    branch: "main"
+  };
+  const TOKEN_STORAGE_KEY = "advertisingtarakan.github.token.v1";
+  const PASSWORD_SHA256 = "e0bc60c82713f64ef8a57c0c40d02ce24fd0141d5cc3086259c19b1e62a62bea";
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
 
   const grid = document.getElementById("grid");
   const categorySelect = document.getElementById("category");
@@ -335,6 +468,15 @@
   const zoomResetBtn = document.getElementById("zoomResetBtn");
   const zoomValue = document.getElementById("zoomValue");
   const downloadBtn = document.getElementById("downloadBtn");
+  const downloadContextMenu = document.getElementById("downloadContextMenu");
+  const deleteMediaMenuItem = document.getElementById("deleteMediaMenuItem");
+  const deleteDialog = document.getElementById("deleteDialog");
+  const deleteTarget = document.getElementById("deleteTarget");
+  const deletePassword = document.getElementById("deletePassword");
+  const deleteToken = document.getElementById("deleteToken");
+  const deleteStatus = document.getElementById("deleteStatus");
+  const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+  const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
 
   const MIN_ZOOM = 0.5;
   const MAX_ZOOM = 5;
@@ -359,6 +501,7 @@
   let dragLastY = 0;
   let pinchStartDistance = 0;
   let pinchStartScale = 1;
+  let deleting = false;
 
   async function loadJSON(url) {
     const bust = `v=${Date.now()}`;
@@ -366,6 +509,296 @@
     const res = await fetch(full, { cache: "no-store" });
     if (!res.ok) throw new Error(`Gagal load ${url} (HTTP ${res.status})`);
     return res.json();
+  }
+
+  function bytesToBase64(bytes){
+    let binary = "";
+    const chunk = 0x8000;
+    for(let i = 0; i < bytes.length; i += chunk){
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  function base64ToBytes(value){
+    const binary = atob(String(value).replace(/\s/g, ""));
+    const bytes = new Uint8Array(binary.length);
+    for(let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  function textToBase64(value){
+    return bytesToBase64(encoder.encode(value));
+  }
+
+  function base64ToText(value){
+    return decoder.decode(base64ToBytes(value));
+  }
+
+  async function sha256Hex(value){
+    const digest = await crypto.subtle.digest("SHA-256", encoder.encode(value));
+    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function validPassword(password){
+    return (await sha256Hex(password)) === PASSWORD_SHA256;
+  }
+
+  async function deriveEncryptionKey(password, salt){
+    const material = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(password),
+      "PBKDF2",
+      false,
+      ["deriveKey"]
+    );
+    return crypto.subtle.deriveKey(
+      { name:"PBKDF2", salt, iterations:200000, hash:"SHA-256" },
+      material,
+      { name:"AES-GCM", length:256 },
+      false,
+      ["decrypt"]
+    );
+  }
+
+  async function decryptStoredToken(payloadText, password){
+    const payload = JSON.parse(payloadText);
+    if(payload.v !== 1) throw new Error("Format token tersimpan tidak didukung");
+    const salt = base64ToBytes(payload.salt);
+    const iv = base64ToBytes(payload.iv);
+    const encrypted = base64ToBytes(payload.data);
+    const key = await deriveEncryptionKey(password, salt);
+    const plain = await crypto.subtle.decrypt({ name:"AES-GCM", iv }, key, encrypted);
+    return decoder.decode(plain);
+  }
+
+  function githubPath(path){
+    return String(path).split("/").map(encodeURIComponent).join("/");
+  }
+
+  function githubHeaders(token, withJson = false){
+    return {
+      "Authorization": `Bearer ${token}`,
+      ...(withJson ? {"Content-Type":"application/json"} : {}),
+      "Accept":"application/vnd.github+json",
+      "X-GitHub-Api-Version":"2022-11-28"
+    };
+  }
+
+  async function verifyDeleteToken(token){
+    const res = await fetch(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}`, {
+      headers: githubHeaders(token)
+    });
+    const text = await res.text();
+    if(!res.ok) throw new Error(`Token tidak dapat mengakses repository (HTTP ${res.status})`);
+    return text ? JSON.parse(text) : {};
+  }
+
+  async function ghGet(token, path){
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${githubPath(path)}?ref=${encodeURIComponent(GITHUB.branch)}`,
+      { headers: githubHeaders(token), cache:"no-store" }
+    );
+    if(res.status === 404) return null;
+    const text = await res.text();
+    if(!res.ok) throw new Error(`GitHub GET gagal (HTTP ${res.status}): ${text.slice(0,160)}`);
+    return text ? JSON.parse(text) : null;
+  }
+
+  async function ghPut(token, path, body){
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${githubPath(path)}`,
+      {
+        method:"PUT",
+        headers:githubHeaders(token, true),
+        body:JSON.stringify(body)
+      }
+    );
+    const text = await res.text();
+    if(!res.ok) throw new Error(`GitHub PUT gagal (HTTP ${res.status}): ${text.slice(0,160)}`);
+    return text ? JSON.parse(text) : {};
+  }
+
+  async function ghDelete(token, path, sha){
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${githubPath(path)}`,
+      {
+        method:"DELETE",
+        headers:githubHeaders(token, true),
+        body:JSON.stringify({
+          message:`delete gallery media: ${path}`,
+          sha,
+          branch:GITHUB.branch
+        })
+      }
+    );
+    const text = await res.text();
+    if(!res.ok) throw new Error(`GitHub DELETE gagal (HTTP ${res.status}): ${text.slice(0,160)}`);
+    return text ? JSON.parse(text) : {};
+  }
+
+  function setDeleteStatus(message, type = ""){
+    deleteStatus.textContent = message;
+    deleteStatus.className = `delete-status${type ? " " + type : ""}`;
+  }
+
+  function getStoredTokenPayload(){
+    try{
+      return localStorage.getItem(TOKEN_STORAGE_KEY);
+    }catch{
+      return null;
+    }
+  }
+
+  function hideDownloadContextMenu(){
+    downloadContextMenu.classList.remove("open");
+    downloadContextMenu.setAttribute("aria-hidden", "true");
+  }
+
+  function showDownloadContextMenu(clientX, clientY){
+    const item = visibleItems[currentIndex];
+    if(!item || /^https?:\/\//i.test(String(item.file || ""))) return;
+    downloadContextMenu.classList.add("open");
+    downloadContextMenu.setAttribute("aria-hidden", "false");
+    downloadContextMenu.style.left = "0px";
+    downloadContextMenu.style.top = "0px";
+    const rect = downloadContextMenu.getBoundingClientRect();
+    const x = clamp(clientX, 8, window.innerWidth - rect.width - 8);
+    const y = clamp(clientY, 8, window.innerHeight - rect.height - 8);
+    downloadContextMenu.style.left = `${x}px`;
+    downloadContextMenu.style.top = `${y}px`;
+    deleteMediaMenuItem.focus();
+  }
+
+  function openDeleteDialog(){
+    hideDownloadContextMenu();
+    const item = visibleItems[currentIndex];
+    if(!item) return;
+    deleteTarget.textContent = `${item.title || "Untitled"} — ${item.file}`;
+    deletePassword.value = "";
+    deleteToken.value = "";
+    setDeleteStatus(
+      getStoredTokenPayload()
+        ? "Masukkan password updoc, atau token manual."
+        : "Token belum tersimpan di browser ini. Gunakan token manual atau setup dahulu lewat updoc."
+    );
+    deleteDialog.classList.add("open");
+    deleteDialog.setAttribute("aria-hidden", "false");
+    deletePassword.focus();
+  }
+
+  function closeDeleteDialog(force = false){
+    if(deleting && !force) return;
+    deleteDialog.classList.remove("open");
+    deleteDialog.setAttribute("aria-hidden", "true");
+    deletePassword.value = "";
+    deleteToken.value = "";
+    setDeleteStatus("");
+    downloadBtn.focus();
+  }
+
+  async function resolveDeleteToken(){
+    const manualToken = deleteToken.value.trim();
+    if(manualToken){
+      await verifyDeleteToken(manualToken);
+      return manualToken;
+    }
+
+    const password = deletePassword.value;
+    if(!password) throw new Error("Masukkan password updoc atau token GitHub manual");
+    if(!(await validPassword(password))) throw new Error("Password upload salah");
+
+    const saved = getStoredTokenPayload();
+    if(!saved) throw new Error("Token belum tersimpan. Masukkan token GitHub manual atau setup lewat updoc.");
+
+    let token;
+    try{
+      token = await decryptStoredToken(saved, password);
+    }catch{
+      throw new Error("Token tersimpan tidak bisa dibuka. Coba token manual atau setup ulang lewat updoc.");
+    }
+    await verifyDeleteToken(token);
+    return token;
+  }
+
+  async function deleteCurrentMedia(){
+    const item = visibleItems[currentIndex];
+    if(!item || deleting) return;
+    const filePath = String(item.file || "").replace(/^\/+/, "");
+    if(!filePath || /^https?:\/\//i.test(filePath) || filePath.includes("..")){
+      throw new Error("Path media ini tidak dapat dihapus dari repository");
+    }
+
+    deleting = true;
+    confirmDeleteBtn.disabled = true;
+    cancelDeleteBtn.disabled = true;
+    downloadBtn.disabled = true;
+    setDeleteStatus("Memverifikasi akses GitHub...", "busy");
+
+    try{
+      const token = await resolveDeleteToken();
+      setDeleteStatus("Membaca file dan manifest terbaru...", "busy");
+
+      const [fileMeta, manifestMeta] = await Promise.all([
+        ghGet(token, filePath),
+        ghGet(token, MANIFEST_URL)
+      ]);
+      if(!fileMeta || !fileMeta.sha) throw new Error("File tidak ditemukan di repository");
+      if(!manifestMeta || !manifestMeta.sha || !manifestMeta.content) throw new Error("gallery-manifest.json tidak ditemukan");
+
+      const originalManifestText = base64ToText(manifestMeta.content);
+      const manifest = JSON.parse(originalManifestText);
+      if(!Array.isArray(manifest.items)) throw new Error("Format manifest tidak valid");
+
+      const before = manifest.items.length;
+      manifest.items = manifest.items.filter(entry => String(entry.file || "").replace(/^\/+/, "") !== filePath);
+      if(manifest.items.length === before) throw new Error("Entri media tidak ditemukan di manifest terbaru");
+
+      setDeleteStatus("Menghapus entri galeri...", "busy");
+      const manifestUpdate = await ghPut(token, MANIFEST_URL, {
+        message:`remove gallery item: ${filePath}`,
+        content:textToBase64(JSON.stringify(manifest, null, 2)),
+        sha:manifestMeta.sha,
+        branch:GITHUB.branch
+      });
+
+      try{
+        setDeleteStatus("Menghapus file media...", "busy");
+        await ghDelete(token, filePath, fileMeta.sha);
+      }catch(deleteError){
+        // Rollback manifest agar galeri tidak kehilangan entri jika penghapusan file gagal.
+        try{
+          const rollbackSha = manifestUpdate?.content?.sha;
+          if(rollbackSha){
+            await ghPut(token, MANIFEST_URL, {
+              message:`rollback failed gallery delete: ${filePath}`,
+              content:textToBase64(originalManifestText),
+              sha:rollbackSha,
+              branch:GITHUB.branch
+            });
+          }
+        }catch(rollbackError){
+          console.error("Rollback manifest gagal", rollbackError);
+          throw new Error(`${deleteError.message}. Rollback manifest juga gagal; periksa repository.`);
+        }
+        throw deleteError;
+      }
+
+      items = items.filter(entry => String(entry.file || "").replace(/^\/+/, "") !== filePath);
+      setDeleteStatus("Media berhasil dihapus.", "ok");
+      closeDeleteDialog(true);
+      closeModal();
+      render();
+      alert("Media berhasil dihapus dari GitHub. Perubahan publik dapat memerlukan waktu singkat untuk tampil.");
+    }catch(error){
+      console.error(error);
+      setDeleteStatus(error.message || String(error));
+    }finally{
+      deleting = false;
+      confirmDeleteBtn.disabled = false;
+      cancelDeleteBtn.disabled = false;
+      downloadBtn.disabled = false;
+    }
   }
 
   function escapeHtml(str){
@@ -494,6 +927,7 @@
   }
 
   function updateModal(){
+    hideDownloadContextMenu();
     if(currentIndex < 0 || !visibleItems[currentIndex]) return;
     const item = visibleItems[currentIndex];
     resetZoom();
@@ -524,6 +958,8 @@
   }
 
   function closeModal() {
+    hideDownloadContextMenu();
+    if(deleteDialog.classList.contains("open")) closeDeleteDialog(true);
     modal.classList.remove("open", "zoomed", "dragging");
     document.body.classList.remove("modal-open");
     modalImg.removeAttribute("src");
@@ -601,12 +1037,50 @@
   zoomInBtn.addEventListener("click", () => setZoom(zoomScale + ZOOM_STEP));
   zoomResetBtn.addEventListener("click", resetZoom);
   downloadBtn.addEventListener("click", downloadCurrent);
+  downloadBtn.addEventListener("contextmenu", e => {
+    e.preventDefault();
+    e.stopPropagation();
+    showDownloadContextMenu(e.clientX, e.clientY);
+  });
+  downloadBtn.addEventListener("keydown", e => {
+    if(e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")){
+      e.preventDefault();
+      const rect = downloadBtn.getBoundingClientRect();
+      showDownloadContextMenu(rect.left, rect.bottom + 5);
+    }
+  });
+  deleteMediaMenuItem.addEventListener("click", openDeleteDialog);
+  cancelDeleteBtn.addEventListener("click", () => closeDeleteDialog());
+  confirmDeleteBtn.addEventListener("click", deleteCurrentMedia);
+  deletePassword.addEventListener("keydown", e => {
+    if(e.key === "Enter") deleteCurrentMedia();
+  });
+  deleteToken.addEventListener("keydown", e => {
+    if(e.key === "Enter") deleteCurrentMedia();
+  });
+  deleteDialog.addEventListener("click", e => {
+    if(e.target === deleteDialog) closeDeleteDialog();
+  });
+  document.addEventListener("pointerdown", e => {
+    if(!downloadContextMenu.contains(e.target) && e.target !== downloadBtn) hideDownloadContextMenu();
+  });
+  window.addEventListener("resize", hideDownloadContextMenu);
+  window.addEventListener("scroll", hideDownloadContextMenu, true);
   modalImg.addEventListener("load", applyZoom);
   modal.addEventListener("click", e => {
     if(e.target === modal && !gestureMoved) closeModal();
   });
 
   document.addEventListener("keydown", e => {
+    if(e.key === "Escape" && downloadContextMenu.classList.contains("open")){
+      hideDownloadContextMenu();
+      downloadBtn.focus();
+      return;
+    }
+    if(e.key === "Escape" && deleteDialog.classList.contains("open")){
+      closeDeleteDialog();
+      return;
+    }
     if(!modal.classList.contains("open")) return;
     if(e.key === "Escape") closeModal();
     if(e.key === "ArrowLeft" && zoomScale <= 1.001) showRelative(-1);
