@@ -1004,6 +1004,40 @@
     }
   }
 
+  function categoryFromHash(){
+    let raw = location.hash.replace(/^#/, "").trim();
+    if(!raw) return "";
+
+    try{ raw = decodeURIComponent(raw); }catch(error){}
+
+    // Cocokkan persis lebih dulu, lalu abaikan huruf besar/kecil agar link lebih toleran.
+    return categories.find(category => category === raw) ||
+      categories.find(category => category.toLowerCase() === raw.toLowerCase()) ||
+      "";
+  }
+
+  function updateCategoryHash(){
+    const category = categorySelect.value;
+    const nextHash = category === "all" ? "" : `#${encodeURIComponent(category)}`;
+    const params = new URLSearchParams(location.search);
+
+    // Hapus format lama ?cat=... supaya hash menjadi satu-satunya sumber filter kategori.
+    params.delete("cat");
+    const nextSearch = params.toString() ? `?${params.toString()}` : "";
+    const nextUrl = `${location.pathname}${nextSearch}${nextHash}`;
+    const currentUrl = `${location.pathname}${location.search}${location.hash}`;
+
+    if(currentUrl !== nextUrl){
+      history.replaceState(null, "", nextUrl);
+    }
+  }
+
+  function applyCategoryFromHash(){
+    const category = categoryFromHash();
+    categorySelect.value = category || "all";
+    render();
+  }
+
   async function init() {
     try{
       const [cfg, manifest] = await Promise.all([
@@ -1018,7 +1052,15 @@
       const params = new URLSearchParams(location.search);
       const requestedCategory = params.get("cat");
       const requestedQuery = params.get("q");
-      if(requestedCategory && categories.includes(requestedCategory)) categorySelect.value = requestedCategory;
+      const hashCategory = categoryFromHash();
+
+      // Prioritas: #kategori untuk link share, lalu fallback ke format lama ?cat=kategori.
+      if(hashCategory){
+        categorySelect.value = hashCategory;
+      }else if(requestedCategory && categories.includes(requestedCategory)){
+        categorySelect.value = requestedCategory;
+      }
+
       if(requestedQuery) searchInput.value = requestedQuery;
 
       render();
@@ -1029,7 +1071,11 @@
   }
 
   searchInput.addEventListener("input", render);
-  categorySelect.addEventListener("change", render);
+  categorySelect.addEventListener("change", () => {
+    updateCategoryHash();
+    render();
+  });
+  window.addEventListener("hashchange", applyCategoryFromHash);
   document.getElementById("closeBtn").addEventListener("click", closeModal);
   prevBtn.addEventListener("click", () => showRelative(-1));
   nextBtn.addEventListener("click", () => showRelative(1));
