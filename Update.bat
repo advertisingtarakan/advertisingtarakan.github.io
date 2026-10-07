@@ -9,7 +9,7 @@ echo.
 git status
 git add .
 git commit -m "Update Fitur"
-git push origin master
+git push origin main
 
 echo.
 echo ================================
